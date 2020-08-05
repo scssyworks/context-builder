@@ -3,6 +3,22 @@
 (function () {
   'use strict';
 
+  function _typeof(obj) {
+    "@babel/helpers - typeof";
+
+    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+      _typeof = function (obj) {
+        return typeof obj;
+      };
+    } else {
+      _typeof = function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+      };
+    }
+
+    return _typeof(obj);
+  }
+
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
@@ -282,6 +298,44 @@
         return this;
       }
       /**
+       * Returns map of DOMRect objects
+       */
+
+    }, {
+      key: "bounds",
+      value: function bounds() {
+        return this.map(function (el) {
+          return el.getBoundingClientRect();
+        });
+      }
+      /**
+       * Sets CSS properties to element(s)
+       * @param {object} obj CSS properties
+       */
+
+    }, {
+      key: "setCSSProps",
+      value: function setCSSProps(obj) {
+        this.elements.forEach(function (el) {
+          Object.keys(obj).forEach(function (prop) {
+            el.style[prop] = obj[prop];
+          });
+        });
+        return this;
+      }
+      /**
+       * Enforce a repaint of targeted elements
+       */
+
+    }, {
+      key: "repaint",
+      value: function repaint() {
+        this.elements.forEach(function (el) {
+          el.offsetHeight; // Accessing offset height somehow triggers a reflow
+        });
+        return this;
+      }
+      /**
        * Static method to create a new HTML node
        * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
        */
@@ -296,27 +350,125 @@
     return Select;
   }();
 
-  var ContextMenu = function ContextMenu(target) {
-    var _this = this;
+  var CursorPlacement = /*#__PURE__*/function () {
+    function CursorPlacement(event, element) {
+      _classCallCheck(this, CursorPlacement);
 
-    _classCallCheck(this, ContextMenu);
+      this.target = new Select(element);
+      this.targetPlacement = this.target.bounds()[0];
+      this.windowProps = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      this.target.setCSSProps({
+        position: 'fixed',
+        top: "".concat(this.getClientY(event), "px"),
+        left: "".concat(this.getClientX(event), "px")
+      });
+    }
+    /**
+     * Returns context menu's approximate position on X axis
+     * @param {Event} event Event object
+     */
 
-    this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
-    this.isSupported = !!this.contextTarget.body;
-    this.rootElement = Select.create("<ul class=\"context-menu-list context-hidden\"></ul>");
-    var ref = this;
-    this.contextTarget.on('contextmenu', function (e) {
-      e.preventDefault();
-      new Select(this).append(ref.rootElement);
-    }).on('click', function () {
-      _this.rootElement = _this.rootElement.detach().children();
-    });
-    this.rootElement.on('click', function (e) {
-      e.stopPropagation();
-    });
-  }; // Generates a context list
 
-  console.log(new ContextMenu());
+    _createClass(CursorPlacement, [{
+      key: "getClientX",
+      value: function getClientX(event) {
+        if (event.clientX + this.targetPlacement.width > this.windowProps.width) {
+          return event.clientX - this.targetPlacement.width;
+        }
+
+        return event.clientX;
+      }
+      /**
+       * Returns context menu's approximate position on Y axis
+       * @param {Event} event Event object
+       */
+
+    }, {
+      key: "getClientY",
+      value: function getClientY(event) {
+        if (event.clientY + this.targetPlacement.height > this.windowProps.height) {
+          return event.clientY - this.targetPlacement.height;
+        }
+
+        return event.clientY;
+      }
+    }]);
+
+    return CursorPlacement;
+  }();
+
+  var ContextMenu = /*#__PURE__*/function () {
+    function ContextMenu(target, config) {
+      var _this = this;
+
+      _classCallCheck(this, ContextMenu);
+
+      if (config && _typeof(config) === 'object') {
+        this.config = Object.freeze(config);
+      }
+
+      this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
+      this.isSupported = !!this.contextTarget.body;
+      this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
+      var ref = this;
+      this.contextTarget.on('contextmenu', function (e) {
+        e.preventDefault();
+        new Select(this).append(ref.rootElement);
+        new CursorPlacement(e, ref.rootElement);
+
+        if (ref.config && typeof ref.config.onActivate === 'function') {
+          ref.rootElement.repaint();
+          config.onActivate(ref.rootElement.map());
+        }
+      }).on('click', function () {
+        var exitFunction = function exitFunction() {
+          _this.rootElement = _this.rootElement.detach().children();
+        };
+
+        if (_this.config && typeof config.onDeactivate === 'function') {
+          config.onDeactivate(exitFunction);
+        } else {
+          exitFunction();
+        }
+      });
+      this.rootElement.on('click', function (e) {
+        e.stopPropagation();
+      });
+    }
+
+    _createClass(ContextMenu, [{
+      key: "add",
+      value: function add(element) {
+        if (element instanceof ContextList || element instanceof ContextItem) {
+          this.rootElement.append(element.rootElement);
+        }
+      }
+    }]);
+
+    return ContextMenu;
+  }(); // Generates a context list
+
+  var ContextList = function ContextList(title, config) {
+    _classCallCheck(this, ContextList);
+
+    if (config && _typeof(config) === 'object') {
+      this.config = Object.freeze(config);
+    }
+
+    this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>");
+    this.listElement = Select.create(this.config && this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>");
+    this.rootElement.append(title).append(this.listElement);
+  }; // Generates a context item
+
+  var ContextItem = function ContextItem() {
+    _classCallCheck(this, ContextItem);
+  };
+
+  var menu = new ContextMenu();
+  menu.add(new ContextList('test'));
 
 }());
 //# sourceMappingURL=contextBuilder.iife.js.map

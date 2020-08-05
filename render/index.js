@@ -1,3 +1,6 @@
-import { ContextMenu } from '../src';
+import { ContextMenu, ContextList } from '../src';
 
-console.log(new ContextMenu());
+const menu = new ContextMenu();
+menu.add(
+    new ContextList('test')
+);

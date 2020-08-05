@@ -167,6 +167,33 @@ export class Select {
         return this;
     }
     /**
+     * Returns map of DOMRect objects
+     */
+    bounds() {
+        return this.map(el => el.getBoundingClientRect());
+    }
+    /**
+     * Sets CSS properties to element(s)
+     * @param {object} obj CSS properties
+     */
+    setCSSProps(obj) {
+        this.elements.forEach(el => {
+            Object.keys(obj).forEach(prop => {
+                el.style[prop] = obj[prop];
+            });
+        });
+        return this;
+    }
+    /**
+     * Enforce a repaint of targeted elements
+     */
+    repaint() {
+        this.elements.forEach(el => {
+            el.offsetHeight; // Accessing offset height somehow triggers a reflow
+        });
+        return this;
+    }
+    /**
      * Static method to create a new HTML node
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
      */
