@@ -3,7 +3,7 @@
 Simple context menu builder API for Web
 
 ```sh
-npm i context-builder.js
+npm i @scssyworks/context-builder
 ```
 
 # This package is under development

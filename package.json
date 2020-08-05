@@ -1,5 +1,5 @@
 {
-  "name": "context-builder.js",
+  "name": "@scssyworks/context-builder",
   "version": "0.1.0",
   "description": "Create context menus with ease",
   "main": "dist/umd/contextBuilder.js",
