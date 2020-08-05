@@ -1,3 +1,3 @@
-import { out } from '../src';
+import { ContextMenu } from '../src';
 
-document.querySelector('app-root').innerHTML = out();
+console.log(new ContextMenu());
