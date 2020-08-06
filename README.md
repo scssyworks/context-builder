@@ -49,7 +49,7 @@ contextMenu.add(
 );
 ```
 
-You can nest elements to ``nth`` level.
+Context builder supports nesting of elements up to ``nth`` level.
 
 ## Listen to click events
 
