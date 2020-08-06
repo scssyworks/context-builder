@@ -1,9 +1,7 @@
 export class Select {
-    constructor(selector, thisParent) {
+    constructor(selector) {
         // Check if document and document.body exist
         this.body = typeof document !== 'undefined' && document && document.body;
-        // Resolve parent
-        this.parent = thisParent || null;
         // Resolve references
         this.elements = [];
         if (this.body && selector) {
@@ -11,7 +9,10 @@ export class Select {
                 this.elements = [...document.querySelectorAll(selector)];
             } else if (selector instanceof Node) {
                 this.elements = [selector];
-            } else if (selector instanceof NodeList || selector instanceof HTMLCollection) {
+            } else if (
+                selector instanceof NodeList
+                || selector instanceof HTMLCollection
+            ) {
                 this.elements = [...selector];
             } else if (Object.prototype.hasOwnProperty.call(selector, 'length')) { // For jQuery or jQuery like objects
                 for (let i = 0; i < selector.length; i++) {
@@ -22,6 +23,18 @@ export class Select {
                 this.parent = selector.parent;
             }
         }
+        // Resolve parent
+        this.parent = this.getParentSelection();
+    }
+    /**
+     * Returns a Select object for parent nodes
+     */
+    getParentSelection() {
+        const parentNodeList = this.elements.map(el => el.parentNode).filter(el => !!el);
+        if (parentNodeList.length) {
+            return new Select(parentNodeList);
+        }
+        return null;
     }
     /**
      * Query children of current element
@@ -37,7 +50,7 @@ export class Select {
                 }
             });
         });
-        return new Select(selected, this);
+        return new Select(selected);
     }
     /**
      * Appends HTML body to current element(s)
@@ -185,6 +198,25 @@ export class Select {
         return this;
     }
     /**
+     * Sets HTML element attributes
+     * @param {object} obj HTML element attributes
+     */
+    setAttr(obj) {
+        this.elements.forEach(el => {
+            Object.keys(obj).forEach(attr => {
+                el.setAttribute(attr, obj[attr]);
+            });
+        });
+        return this;
+    }
+    /**
+     * Returns a map of attribute values for selected elements
+     * @param {string} attr Attribute
+     */
+    getAttrMap(attr) {
+        return this.map(el => el.getAttribute(attr));
+    }
+    /**
      * Enforce a repaint of targeted elements
      */
     repaint() {
@@ -192,6 +224,20 @@ export class Select {
             el.offsetHeight; // Accessing offset height somehow triggers a reflow
         });
         return this;
+    }
+    /**
+     * Returns true if current element is contained in this selector
+     * @param {Node | NodeList | HTMLCollection | Select} nodes Element
+     */
+    contains(nodes) {
+        return (new Select(nodes)).map(n => {
+            for (const el of this.elements) {
+                if (el.contains(n)) {
+                    return true;
+                }
+            }
+            return false;
+        }).indexOf(false) === -1;
     }
     /**
      * Static method to create a new HTML node

@@ -18,10 +18,10 @@ const commonConfig = {
                 moduleDirectory: 'node_modules'
             }
         }),
-        commonjs(),
         babel({
             exclude: 'node_modules/**'
-        })
+        }),
+        commonjs()
     ]
 };
 

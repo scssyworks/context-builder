@@ -74,14 +74,83 @@
     throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
   }
 
+  function _createForOfIteratorHelper(o, allowArrayLike) {
+    var it;
+
+    if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) {
+      if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
+        if (it) o = it;
+        var i = 0;
+
+        var F = function () {};
+
+        return {
+          s: F,
+          n: function () {
+            if (i >= o.length) return {
+              done: true
+            };
+            return {
+              done: false,
+              value: o[i++]
+            };
+          },
+          e: function (e) {
+            throw e;
+          },
+          f: F
+        };
+      }
+
+      throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+    }
+
+    var normalCompletion = true,
+        didErr = false,
+        err;
+    return {
+      s: function () {
+        it = o[Symbol.iterator]();
+      },
+      n: function () {
+        var step = it.next();
+        normalCompletion = step.done;
+        return step;
+      },
+      e: function (e) {
+        didErr = true;
+        err = e;
+      },
+      f: function () {
+        try {
+          if (!normalCompletion && it.return != null) it.return();
+        } finally {
+          if (didErr) throw err;
+        }
+      }
+    };
+  }
+
+  function _classPrivateFieldGet(receiver, privateMap) {
+    var descriptor = privateMap.get(receiver);
+
+    if (!descriptor) {
+      throw new TypeError("attempted to get private field on non-instance");
+    }
+
+    if (descriptor.get) {
+      return descriptor.get.call(receiver);
+    }
+
+    return descriptor.value;
+  }
+
   var Select = /*#__PURE__*/function () {
-    function Select(selector, thisParent) {
+    function Select(selector) {
       _classCallCheck(this, Select);
 
       // Check if document and document.body exist
-      this.body = typeof document !== 'undefined' && document && document.body; // Resolve parent
-
-      this.parent = thisParent || null; // Resolve references
+      this.body = typeof document !== 'undefined' && document && document.body; // Resolve references
 
       this.elements = [];
 
@@ -101,15 +170,37 @@
           this.elements = _toConsumableArray(selector.elements);
           this.parent = selector.parent;
         }
-      }
+      } // Resolve parent
+
+
+      this.parent = this.getParentSelection();
     }
     /**
-     * Query children of current element
-     * @param {string} selector Selector
+     * Returns a Select object for parent nodes
      */
 
 
     _createClass(Select, [{
+      key: "getParentSelection",
+      value: function getParentSelection() {
+        var parentNodeList = this.elements.map(function (el) {
+          return el.parentNode;
+        }).filter(function (el) {
+          return !!el;
+        });
+
+        if (parentNodeList.length) {
+          return new Select(parentNodeList);
+        }
+
+        return null;
+      }
+      /**
+       * Query children of current element
+       * @param {string} selector Selector
+       */
+
+    }, {
       key: "query",
       value: function query(selector) {
         var selected = [];
@@ -122,7 +213,7 @@
             }
           });
         });
-        return new Select(selected, this);
+        return new Select(selected);
       }
       /**
        * Appends HTML body to current element(s)
@@ -324,6 +415,33 @@
         return this;
       }
       /**
+       * Sets HTML element attributes
+       * @param {object} obj HTML element attributes
+       */
+
+    }, {
+      key: "setAttr",
+      value: function setAttr(obj) {
+        this.elements.forEach(function (el) {
+          Object.keys(obj).forEach(function (attr) {
+            el.setAttribute(attr, obj[attr]);
+          });
+        });
+        return this;
+      }
+      /**
+       * Returns a map of attribute values for selected elements
+       * @param {string} attr Attribute
+       */
+
+    }, {
+      key: "getAttrMap",
+      value: function getAttrMap(attr) {
+        return this.map(function (el) {
+          return el.getAttribute(attr);
+        });
+      }
+      /**
        * Enforce a repaint of targeted elements
        */
 
@@ -334,6 +452,37 @@
           el.offsetHeight; // Accessing offset height somehow triggers a reflow
         });
         return this;
+      }
+      /**
+       * Returns true if current element is contained in this selector
+       * @param {Node | NodeList | HTMLCollection | Select} nodes Element
+       */
+
+    }, {
+      key: "contains",
+      value: function contains(nodes) {
+        var _this = this;
+
+        return new Select(nodes).map(function (n) {
+          var _iterator = _createForOfIteratorHelper(_this.elements),
+              _step;
+
+          try {
+            for (_iterator.s(); !(_step = _iterator.n()).done;) {
+              var el = _step.value;
+
+              if (el.contains(n)) {
+                return true;
+              }
+            }
+          } catch (err) {
+            _iterator.e(err);
+          } finally {
+            _iterator.f();
+          }
+
+          return false;
+        }).indexOf(false) === -1;
       }
       /**
        * Static method to create a new HTML node
@@ -400,11 +549,18 @@
     return CursorPlacement;
   }();
 
+  var _listeners = new WeakMap();
+
   var ContextMenu = /*#__PURE__*/function () {
     function ContextMenu(target, config) {
       var _this = this;
 
       _classCallCheck(this, ContextMenu);
+
+      _listeners.set(this, {
+        writable: true,
+        value: []
+      });
 
       if (config && _typeof(config) === 'object') {
         this.config = Object.freeze(config);
@@ -414,7 +570,8 @@
       this.isSupported = !!this.contextTarget.body;
       this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
       var ref = this;
-      this.contextTarget.on('contextmenu', function (e) {
+
+      var onContextMenu = function onContextMenu(e) {
         e.preventDefault();
         new Select(this).append(ref.rootElement);
         new CursorPlacement(e, ref.rootElement);
@@ -423,52 +580,159 @@
           ref.rootElement.repaint();
           config.onActivate(ref.rootElement.map());
         }
-      }).on('click', function () {
-        var exitFunction = function exitFunction() {
-          _this.rootElement = _this.rootElement.detach().children();
-        };
+      };
 
+      var exitFunction = function exitFunction() {
+        _this.rootElement = _this.rootElement.detach().children();
+      };
+
+      var onClick = function onClick() {
         if (_this.config && typeof config.onDeactivate === 'function') {
           config.onDeactivate(exitFunction);
         } else {
           exitFunction();
         }
-      });
-      this.rootElement.on('click', function (e) {
+      };
+
+      var onRootClick = function onRootClick(e) {
         e.stopPropagation();
+
+        if (_this.config && typeof _this.config.onClick === 'function') {
+          var shouldExit = _this.config.onClick.apply(new Select(e.target), [e]);
+
+          if (shouldExit) {
+            if (typeof _this.config.onDeactivate === 'function') {
+              _this.config.onDeactivate(exitFunction);
+            } else {
+              exitFunction();
+            }
+          }
+        }
+      };
+
+      _classPrivateFieldGet(this, _listeners).push({
+        onContextMenu: onContextMenu
+      }, {
+        onClick: onClick
+      }, {
+        onRootClick: onRootClick
       });
+
+      this.contextTarget.on('contextmenu', onContextMenu).on('click', onClick);
+      this.rootElement.on('click', onRootClick);
     }
 
     _createClass(ContextMenu, [{
       key: "add",
-      value: function add(element) {
-        if (element instanceof ContextList || element instanceof ContextItem) {
-          this.rootElement.append(element.rootElement);
+      value: function add() {
+        var elements = Array.prototype.slice.call(arguments);
+
+        var _iterator = _createForOfIteratorHelper(elements),
+            _step;
+
+        try {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
+            var element = _step.value;
+
+            if (element instanceof ContextList || element instanceof ContextItem) {
+              this.rootElement.append(element.rootElement);
+            }
+          }
+        } catch (err) {
+          _iterator.e(err);
+        } finally {
+          _iterator.f();
         }
+      }
+    }, {
+      key: "cleanup",
+      value: function cleanup() {
+        var onContextMenu = _classPrivateFieldGet(this, _listeners).filter(function (fn) {
+          return Object.prototype.hasOwnProperty.call(fn, 'onContextMenu');
+        })[0].onContextMenu;
+
+        var onClick = _classPrivateFieldGet(this, _listeners).filter(function (fn) {
+          return Object.prototype.hasOwnProperty.call(fn, 'onClick');
+        })[0].onClick;
+
+        var onRootClick = _classPrivateFieldGet(this, _listeners).filter(function (fn) {
+          return Object.prototype.hasOwnProperty.call(fn, 'onRootClick');
+        })[0].onRootClick;
+
+        this.contextTarget.off('contextmenu', onContextMenu).off('click', onClick);
+        this.rootElement.off('click', onRootClick);
       }
     }]);
 
     return ContextMenu;
   }(); // Generates a context list
 
-  var ContextList = function ContextList(title, config) {
-    _classCallCheck(this, ContextList);
+  var ContextList = /*#__PURE__*/function () {
+    function ContextList(title, config) {
+      _classCallCheck(this, ContextList);
+
+      if (config && _typeof(config) === 'object') {
+        this.config = Object.freeze(config);
+      }
+
+      this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>");
+      this.rootElement.setAttr({
+        'data-has-sub-elements': true
+      });
+      this.listElement = Select.create(this.config && this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>");
+      this.rootElement.append(title).append(this.listElement);
+    }
+
+    _createClass(ContextList, [{
+      key: "add",
+      value: function add() {
+        var elements = Array.prototype.slice.call(arguments);
+
+        var _iterator2 = _createForOfIteratorHelper(elements),
+            _step2;
+
+        try {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+            var element = _step2.value;
+
+            if (element instanceof ContextList || element instanceof ContextItem) {
+              this.listElement.append(element.rootElement);
+            }
+          }
+        } catch (err) {
+          _iterator2.e(err);
+        } finally {
+          _iterator2.f();
+        }
+      }
+    }, {
+      key: "parent",
+      get: function get() {
+        return this.rootElement.parent;
+      }
+    }]);
+
+    return ContextList;
+  }(); // Generates a context item
+
+  var ContextItem = function ContextItem(title, config) {
+    _classCallCheck(this, ContextItem);
 
     if (config && _typeof(config) === 'object') {
-      this.config = Object.freeze(config);
+      this.config = Object.freeze();
     }
 
     this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>");
-    this.listElement = Select.create(this.config && this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>");
-    this.rootElement.append(title).append(this.listElement);
-  }; // Generates a context item
-
-  var ContextItem = function ContextItem() {
-    _classCallCheck(this, ContextItem);
+    this.rootElement.append(title);
   };
 
-  var menu = new ContextMenu();
-  menu.add(new ContextList('test'));
+  var menu = new ContextMenu(null, {
+    onClick: function onClick() {
+      console.log(this.textMap());
+      return true;
+    }
+  });
+  menu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'), new ContextItem('List Item 4'), new ContextItem('List Item 5'), new ContextItem('List Item 6'));
 
 }());
 //# sourceMappingURL=contextBuilder.iife.js.map
