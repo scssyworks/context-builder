@@ -1,6 +1,6 @@
 # Using existing HTML to build context menu
 
-You can use an existing DOM node as a reference to context menu.
+You can use an existing DOM structure as context menu. You need to pass it as ``rootElement`` reference.
 
 ```html
 <ul class="context-menu">
@@ -19,9 +19,9 @@ new ContextMenu(null, {
 });
 ```
 
-Existing DOM structure can readily be used as a context menu. However, you can add and customize elements at runtime.
-
 # Adding custom menu items dynamically
+
+You can customize menu elements at any level. Context Builder gives full flexibility to alter and modify menus as per your requirements.
 
 ```js
 import { ContextMenu, ContextItem } from '@scssyworks/context-builder';
