@@ -4,6 +4,7 @@ import { CursorPlacement } from './CursorPlacement';
 
 export class ContextMenu {
     #listeners = [];
+    #open = false;
     constructor(target, config) {
         if (config && typeof config === 'object') {
             this.config = Object.freeze(config);
@@ -20,25 +21,29 @@ export class ContextMenu {
         const ref = this;
         const onContextMenu = function (e) {
             e.preventDefault();
-            (new Select(this)).append(ref.rootElement);
-            new CursorPlacement(e, ref.rootElement);
-            if (
-                ref.config
-                && typeof ref.config.onActivate === 'function'
-            ) {
-                ref.rootElement.repaint();
-                config.onActivate(ref.rootElement.map());
+            if (!ref.#open) {
+                (new Select(this)).append(ref.rootElement);
+                new CursorPlacement(e, ref.rootElement);
+                if (
+                    ref.config
+                    && typeof ref.config.onActivate === 'function'
+                ) {
+                    ref.rootElement.repaint();
+                    config.onActivate(ref.rootElement);
+                    ref.#open = true;
+                }
             }
         };
         const exitFunction = () => {
             this.rootElement = this.rootElement.detach().children();
+            this.#open = false;
         };
         const onClick = () => {
             if (
                 this.config
                 && typeof config.onDeactivate === 'function'
             ) {
-                config.onDeactivate(exitFunction);
+                config.onDeactivate(this.rootElement, exitFunction);
             } else {
                 exitFunction();
             }
@@ -52,7 +57,7 @@ export class ContextMenu {
                 const shouldExit = this.config.onClick.apply(new Select(e.target), [e]);
                 if (shouldExit) {
                     if (typeof this.config.onDeactivate === 'function') {
-                        this.config.onDeactivate(exitFunction);
+                        this.config.onDeactivate(this.rootElement, exitFunction);
                     } else {
                         exitFunction();
                     }

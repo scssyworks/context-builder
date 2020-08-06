@@ -145,6 +145,26 @@
     return descriptor.value;
   }
 
+  function _classPrivateFieldSet(receiver, privateMap, value) {
+    var descriptor = privateMap.get(receiver);
+
+    if (!descriptor) {
+      throw new TypeError("attempted to set private field on non-instance");
+    }
+
+    if (descriptor.set) {
+      descriptor.set.call(receiver, value);
+    } else {
+      if (!descriptor.writable) {
+        throw new TypeError("attempted to set read only private field");
+      }
+
+      descriptor.value = value;
+    }
+
+    return value;
+  }
+
   var Select = /*#__PURE__*/function () {
     function Select(selector) {
       _classCallCheck(this, Select);
@@ -389,6 +409,29 @@
         return this;
       }
       /**
+       * Auto detach event listener after first call
+       * @param {string} eventType Event name
+       * @param {Function} cb Callback function
+       * @param {boolean} useCapture Use capture mode
+       */
+
+    }, {
+      key: "once",
+      value: function once(eventType, cb, useCapture) {
+        var ref = this;
+
+        var onceCb = function onceCb() {
+          cb.apply(this, arguments);
+          ref.elements.forEach(function (el) {
+            el.removeEventListener(eventType, onceCb, useCapture);
+          });
+        };
+
+        this.elements.forEach(function (el) {
+          el.addEventListener(eventType, onceCb, useCapture);
+        });
+      }
+      /**
        * Returns map of DOMRect objects
        */
 
@@ -512,7 +555,10 @@
       this.target.setCSSProps({
         position: 'fixed',
         top: "".concat(this.getClientY(event), "px"),
-        left: "".concat(this.getClientX(event), "px")
+        left: "".concat(this.getClientX(event), "px"),
+        maxWidth: "".concat(this.windowProps.width - 10, "px"),
+        maxHeight: "".concat(this.windowProps.height - 10, "px"),
+        overflow: 'auto'
       });
     }
     /**
@@ -524,8 +570,10 @@
     _createClass(CursorPlacement, [{
       key: "getClientX",
       value: function getClientX(event) {
-        if (event.clientX + this.targetPlacement.width > this.windowProps.width) {
-          return event.clientX - this.targetPlacement.width;
+        var displacement = event.clientX + this.targetPlacement.width - this.windowProps.width;
+
+        if (displacement > 0) {
+          return event.clientX - displacement - 4;
         }
 
         return event.clientX;
@@ -538,8 +586,10 @@
     }, {
       key: "getClientY",
       value: function getClientY(event) {
-        if (event.clientY + this.targetPlacement.height > this.windowProps.height) {
-          return event.clientY - this.targetPlacement.height;
+        var displacement = event.clientY + this.targetPlacement.height - this.windowProps.height;
+
+        if (displacement > 0) {
+          return event.clientY - displacement - 4;
         }
 
         return event.clientY;
@@ -551,6 +601,8 @@
 
   var _listeners = new WeakMap();
 
+  var _open = new WeakMap();
+
   var ContextMenu = /*#__PURE__*/function () {
     function ContextMenu(target, config) {
       var _this = this;
@@ -560,6 +612,11 @@
       _listeners.set(this, {
         writable: true,
         value: []
+      });
+
+      _open.set(this, {
+        writable: true,
+        value: false
       });
 
       if (config && _typeof(config) === 'object') {
@@ -573,22 +630,29 @@
 
       var onContextMenu = function onContextMenu(e) {
         e.preventDefault();
-        new Select(this).append(ref.rootElement);
-        new CursorPlacement(e, ref.rootElement);
 
-        if (ref.config && typeof ref.config.onActivate === 'function') {
-          ref.rootElement.repaint();
-          config.onActivate(ref.rootElement.map());
+        if (!_classPrivateFieldGet(ref, _open)) {
+          new Select(this).append(ref.rootElement);
+          new CursorPlacement(e, ref.rootElement);
+
+          if (ref.config && typeof ref.config.onActivate === 'function') {
+            ref.rootElement.repaint();
+            config.onActivate(ref.rootElement);
+
+            _classPrivateFieldSet(ref, _open, true);
+          }
         }
       };
 
       var exitFunction = function exitFunction() {
         _this.rootElement = _this.rootElement.detach().children();
+
+        _classPrivateFieldSet(_this, _open, false);
       };
 
       var onClick = function onClick() {
         if (_this.config && typeof config.onDeactivate === 'function') {
-          config.onDeactivate(exitFunction);
+          config.onDeactivate(_this.rootElement, exitFunction);
         } else {
           exitFunction();
         }
@@ -602,7 +666,7 @@
 
           if (shouldExit) {
             if (typeof _this.config.onDeactivate === 'function') {
-              _this.config.onDeactivate(exitFunction);
+              _this.config.onDeactivate(_this.rootElement, exitFunction);
             } else {
               exitFunction();
             }
@@ -730,6 +794,17 @@
     onClick: function onClick() {
       console.log(this.textMap());
       return true;
+    },
+    onActivate: function onActivate(rootEl) {
+      rootEl.map(function (el) {
+        return el.classList.add('show');
+      });
+    },
+    onDeactivate: function onDeactivate(rootEl, fn) {
+      rootEl.once('transitionend', fn);
+      rootEl.map(function (el) {
+        return el.classList.remove('show');
+      });
     }
   });
   menu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'), new ContextItem('List Item 4'), new ContextItem('List Item 5'), new ContextItem('List Item 6'));

@@ -180,6 +180,24 @@ export class Select {
         return this;
     }
     /**
+     * Auto detach event listener after first call
+     * @param {string} eventType Event name
+     * @param {Function} cb Callback function
+     * @param {boolean} useCapture Use capture mode
+     */
+    once(eventType, cb, useCapture) {
+        const ref = this;
+        const onceCb = function () {
+            cb.apply(this, arguments);
+            ref.elements.forEach(el => {
+                el.removeEventListener(eventType, onceCb, useCapture);
+            });
+        };
+        this.elements.forEach(el => {
+            el.addEventListener(eventType, onceCb, useCapture);
+        });
+    }
+    /**
      * Returns map of DOMRect objects
      */
     bounds() {

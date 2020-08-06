@@ -4,6 +4,13 @@ const menu = new ContextMenu(null, {
     onClick() {
         console.log(this.textMap());
         return true;
+    },
+    onActivate(rootEl) {
+        rootEl.map(el => el.classList.add('show'));
+    },
+    onDeactivate(rootEl, fn) {
+        rootEl.once('transitionend', fn);
+        rootEl.map(el => el.classList.remove('show'));
     }
 });
 menu.add(

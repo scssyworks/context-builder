@@ -11,7 +11,10 @@ export class CursorPlacement {
         this.target.setCSSProps({
             position: 'fixed',
             top: `${this.getClientY(event)}px`,
-            left: `${this.getClientX(event)}px`
+            left: `${this.getClientX(event)}px`,
+            maxWidth: `${this.windowProps.width - 10}px`,
+            maxHeight: `${this.windowProps.height - 10}px`,
+            overflow: 'auto'
         });
     }
     /**
@@ -19,8 +22,9 @@ export class CursorPlacement {
      * @param {Event} event Event object
      */
     getClientX(event) {
-        if (event.clientX + this.targetPlacement.width > this.windowProps.width) {
-            return event.clientX - this.targetPlacement.width;
+        const displacement = event.clientX + this.targetPlacement.width - this.windowProps.width;
+        if (displacement > 0) {
+            return event.clientX - displacement - 4;
         }
         return event.clientX;
     }
@@ -29,8 +33,9 @@ export class CursorPlacement {
      * @param {Event} event Event object
      */
     getClientY(event) {
-        if (event.clientY + this.targetPlacement.height > this.windowProps.height) {
-            return event.clientY - this.targetPlacement.height;
+        const displacement = event.clientY + this.targetPlacement.height - this.windowProps.height;
+        if (displacement > 0) {
+            return event.clientY - displacement - 4;
         }
         return event.clientY;
     }
