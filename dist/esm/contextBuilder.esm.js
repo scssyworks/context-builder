@@ -702,6 +702,8 @@ var ContextMenu = /*#__PURE__*/function () {
       } finally {
         _iterator.f();
       }
+
+      return this;
     }
   }, {
     key: "cleanup",
@@ -763,6 +765,8 @@ var ContextList = /*#__PURE__*/function () {
       } finally {
         _iterator2.f();
       }
+
+      return this;
     }
   }, {
     key: "parent",

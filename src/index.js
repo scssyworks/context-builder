@@ -84,6 +84,7 @@ export class ContextMenu {
                 this.rootElement.append(element.rootElement);
             }
         }
+        return this;
     }
     cleanup() {
         const { onContextMenu } = this.#listeners.filter(fn => Object.prototype.hasOwnProperty.call(fn, 'onContextMenu'))[0];
@@ -132,6 +133,7 @@ export class ContextList {
                 this.listElement.append(element.rootElement);
             }
         }
+        return this;
     }
 }
 

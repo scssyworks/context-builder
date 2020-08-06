@@ -708,6 +708,8 @@
         } finally {
           _iterator.f();
         }
+
+        return this;
       }
     }, {
       key: "cleanup",
@@ -769,6 +771,8 @@
         } finally {
           _iterator2.f();
         }
+
+        return this;
       }
     }, {
       key: "parent",
