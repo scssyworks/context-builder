@@ -1,6 +1,6 @@
 # Context Builder
 
-Build context menus with ease.
+A powerful and easy to use library for building custom context menus.
 
 ```sh
 npm i @scssyworks/context-builder
@@ -98,3 +98,5 @@ contextMenu.cleanup();
 # Customize
 
 Context Builder is fully customizable. You can use your own elements to build context menu. Use the following guide to customize your context menus:
+
+https://github.com/scssyworks/context-builder/blob/master/CUSTOMIZE.md
