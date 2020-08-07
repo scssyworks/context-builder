@@ -4,10 +4,12 @@
   "description": "Create context menus with ease",
   "main": "dist/umd/contextBuilder.js",
   "module": "dist/esm/contextBuilder.esm.js",
+  "typings": "dist/typings/src/index.d.ts",
   "scripts": {
     "start": "rollup -c --watch --environment SERVE:true",
-    "build": "npm run test && rollup -c",
-    "test": "jest plugin.test.js"
+    "build": "npm run typegen && rollup -c",
+    "test": "jest plugin.test.js",
+    "typegen": "tsc --declaration --noEmit false --outDir dist/typings/ --emitDeclarationOnly --declarationMap"
   },
   "author": "scssyworks",
   "license": "MIT",
@@ -48,7 +50,8 @@
   ],
   "files": [
     "dist/umd/",
-    "dist/esm/"
+    "dist/esm/",
+    "dist/typings/"
   ],
   "repository": {
     "type": "git",
