@@ -7,7 +7,7 @@ import serve from 'rollup-plugin-serve';
 import livereload from 'rollup-plugin-livereload';
 
 const commonConfig = {
-    input: 'src/index.js',
+    input: 'src/index.ts',
     output: {
         name: 'contextBuilder',
         sourcemap: true
@@ -19,9 +19,12 @@ const commonConfig = {
             }
         }),
         babel({
-            exclude: 'node_modules/**'
+            exclude: 'node_modules/**',
+            extensions: ['.js', '.jsx', '.es6', '.es', '.mjs', '.ts']
         }),
-        commonjs()
+        commonjs({
+            extensions: ['.js', '.ts']
+        })
     ]
 };
 
@@ -67,7 +70,7 @@ umdProdConfig.plugins = [
 let configurations = [];
 if (process.env.SERVE) {
     const serveConfig = Object.assign({}, commonConfig);
-    serveConfig.input = 'render/index.js';
+    serveConfig.input = 'render/index.ts';
     serveConfig.output = Object.assign({}, commonConfig.output, {
         file: 'dist/render/contextBuilder.iife.js',
         format: 'iife'

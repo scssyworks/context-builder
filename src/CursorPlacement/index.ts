@@ -1,7 +1,13 @@
-import { Select } from '../Select';
+import { Select, HTMLSelector } from '../Select';
 
 export class CursorPlacement {
-    constructor(event, element) {
+    target: Select;
+    targetPlacement: DOMRect | null;
+    windowProps: {
+        width: number,
+        height: number
+    };
+    constructor(event: MouseEvent, element: HTMLSelector) {
         this.target = new Select(element);
         this.targetPlacement = this.target.bounds()[0];
         this.windowProps = {
@@ -21,10 +27,12 @@ export class CursorPlacement {
      * Returns context menu's approximate position on X axis
      * @param {Event} event Event object
      */
-    getClientX(event) {
-        const displacement = event.clientX + this.targetPlacement.width - this.windowProps.width;
-        if (displacement > 0) {
-            return event.clientX - displacement - 4;
+    getClientX(event: MouseEvent): number {
+        if (this.targetPlacement) {
+            const displacement = event.clientX + this.targetPlacement.width - this.windowProps.width;
+            if (displacement > 0) {
+                return event.clientX - displacement - 4;
+            }
         }
         return event.clientX;
     }
@@ -32,10 +40,12 @@ export class CursorPlacement {
      * Returns context menu's approximate position on Y axis
      * @param {Event} event Event object
      */
-    getClientY(event) {
-        const displacement = event.clientY + this.targetPlacement.height - this.windowProps.height;
-        if (displacement > 0) {
-            return event.clientY - displacement - 4;
+    getClientY(event: MouseEvent): number {
+        if (this.targetPlacement) {
+            const displacement = event.clientY + this.targetPlacement.height - this.windowProps.height;
+            if (displacement > 0) {
+                return event.clientY - displacement - 4;
+            }
         }
         return event.clientY;
     }

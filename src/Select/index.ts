@@ -1,25 +1,33 @@
+import { Selector, TypeNodes } from "../types";
+
+export type HTMLSelector = Select | Selector;
+export type HTMLTypeNodes = Select | TypeNodes;
+
 export class Select {
-    constructor(selector) {
+    body: boolean | HTMLBodyElement;
+    elements: Node[];
+    parent: Select | null;
+    constructor(selector?: HTMLSelector) {
         // Check if document and document.body exist
-        this.body = typeof document !== 'undefined' && document && document.body;
+        this.body = typeof document !== 'undefined' && !!document && (document.body as HTMLBodyElement);
         // Resolve references
         this.elements = [];
         if (this.body && selector) {
             if (typeof selector === 'string') {
-                this.elements = [...document.querySelectorAll(selector)];
-            } else if (selector instanceof Node) {
-                this.elements = [selector];
+                this.elements = [...document.querySelectorAll(selector)] as Node[];
+            } else if (selector instanceof Node || selector instanceof EventTarget) {
+                this.elements = [selector] as Node[];
             } else if (
                 selector instanceof NodeList
                 || selector instanceof HTMLCollection
             ) {
-                this.elements = [...selector];
+                this.elements = [...selector] as Node[];
             } else if (Object.prototype.hasOwnProperty.call(selector, 'length')) { // For jQuery or jQuery like objects
-                for (let i = 0; i < selector.length; i++) {
-                    this.elements.push(selector[i]);
+                for (let i = 0; i < (selector as Node[]).length; i++) {
+                    this.elements.push((selector as Node[])[i]);
                 }
             } else if (selector instanceof Select) {
-                this.elements = [...selector.elements];
+                this.elements = [...selector.elements] as Node[];
                 this.parent = selector.parent;
             }
         }
@@ -29,10 +37,10 @@ export class Select {
     /**
      * Returns a Select object for parent nodes
      */
-    getParentSelection() {
+    getParentSelection(): (Select | null) {
         const parentNodeList = this.elements.map(el => el.parentNode).filter(el => !!el);
         if (parentNodeList.length) {
-            return new Select(parentNodeList);
+            return new Select(parentNodeList as Node[]);
         }
         return null;
     }
@@ -40,15 +48,17 @@ export class Select {
      * Query children of current element
      * @param {string} selector Selector
      */
-    query(selector) {
-        const selected = [];
+    query(selector: string): Select {
+        const selected = [] as Node[];
         this.elements.forEach(el => {
-            const children = [...el.querySelectorAll(selector)];
-            children.forEach(child => {
-                if (selected.indexOf(child) === -1) {
-                    selected.push(children);
-                }
-            });
+            if (el instanceof HTMLElement) {
+                const children = [...el.querySelectorAll(selector)] as HTMLElement[];
+                children.forEach(child => {
+                    if (selected.indexOf(child) === -1) {
+                        selected.push(child);
+                    }
+                });
+            }
         });
         return new Select(selected);
     }
@@ -56,9 +66,9 @@ export class Select {
      * Appends HTML body to current element(s)
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes 
      */
-    append(nodes) {
+    append(nodes: HTMLTypeNodes): Select {
         if (this.body) {
-            let consumableNodes;
+            let consumableNodes: Select;
             if (typeof nodes === 'string') {
                 // Expecting a plain HTML string
                 const tempDiv = document.createElement('div');
@@ -86,7 +96,7 @@ export class Select {
      * Prepends HTML body to current element(s)
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
      */
-    prepend(nodes) {
+    prepend(nodes: HTMLTypeNodes): Select {
         if (this.body) {
             this.elements.forEach(target => {
                 const currentFragment = (new Select(target.childNodes)).detach();
@@ -98,7 +108,7 @@ export class Select {
     /**
      * Removes current set of elements from DOM and return DocumentFragment as a Select instance
      */
-    detach() {
+    detach(): Select {
         if (this.body) {
             const fragment = document.createDocumentFragment();
             this.elements.forEach(el => {
@@ -111,10 +121,12 @@ export class Select {
     /**
      * Clears current elements inner HTML
      */
-    clear() {
+    clear(): Select {
         if (this.body) {
             this.elements.forEach(el => {
-                el.innerHTML = '';
+                if (el instanceof HTMLElement) {
+                    el.innerHTML = '';
+                }
             });
         }
         return this;
@@ -122,20 +134,30 @@ export class Select {
     /**
      * Returns current map of HTML strings
      */
-    htmlMap() {
-        return this.map(el => el.innerHTML);
+    htmlMap(): string[] {
+        return this.map((el: any) => {
+            if (el instanceof HTMLElement) {
+                return el.innerHTML;
+            }
+            return '';
+        });
     }
     /**
      * Returns current map of text strings
      */
-    textMap() {
-        return this.map(el => el.textContent || el.innerText);
+    textMap(): string[] {
+        return this.map(el => {
+            if (el instanceof HTMLElement) {
+                return el.textContent || el.innerText;
+            }
+            return '';
+        });
     }
     /**
      * Returns current list of element as array
      * @param {Function} evaluatorFn Evaluator function
      */
-    map(evaluatorFn) {
+    map(evaluatorFn: (n: Node, i: number) => any): any[] {
         if (!this.body || typeof evaluatorFn !== 'function') {
             return this.elements;
         }
@@ -144,14 +166,14 @@ export class Select {
     /**
      * Returns current body tag as a Select instance
      */
-    getBodyTag() {
-        return new Select(this.body);
+    getBodyTag(): Select {
+        return new Select(this.body as HTMLBodyElement);
     }
     /**
      * Returns current Select reference children
      */
-    children() {
-        const elements = [];
+    children(): Select {
+        const elements = [] as Node[];
         this.elements.forEach(el => {
             [...el.childNodes].forEach(n => {
                 if (elements.indexOf(n) === -1) {
@@ -164,18 +186,18 @@ export class Select {
     /**
      * Binds a regular event listener
      */
-    on() {
+    on<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select {
         this.elements.forEach(el => {
-            el.addEventListener(...arguments);
+            el.addEventListener(eventType, cb as EventListener, useCapture);
         });
         return this;
     }
     /**
      * Removes a regular event listener
      */
-    off() {
+    off<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select {
         this.elements.forEach(el => {
-            el.removeEventListener(...arguments);
+            el.removeEventListener(eventType, cb as EventListener, useCapture);
         });
         return this;
     }
@@ -185,33 +207,41 @@ export class Select {
      * @param {Function} cb Callback function
      * @param {boolean} useCapture Use capture mode
      */
-    once(eventType, cb, useCapture) {
+    once<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select {
         const ref = this;
-        const onceCb = function () {
-            cb.apply(this, arguments);
+        const onceCb = function (e: WindowEventMap[K]) {
+            cb.apply(this, [e]);
             ref.elements.forEach(el => {
                 el.removeEventListener(eventType, onceCb, useCapture);
             });
-        };
+        } as EventListener;
         this.elements.forEach(el => {
             el.addEventListener(eventType, onceCb, useCapture);
         });
+        return this;
     }
     /**
      * Returns map of DOMRect objects
      */
-    bounds() {
-        return this.map(el => el.getBoundingClientRect());
+    bounds(): (DOMRect | null)[] {
+        return this.map(el => {
+            if (el instanceof HTMLElement) {
+                return el.getBoundingClientRect();
+            }
+            return null;
+        });
     }
     /**
      * Sets CSS properties to element(s)
      * @param {object} obj CSS properties
      */
-    setCSSProps(obj) {
+    setCSSProps(obj: { [prop: string]: any }): Select {
         this.elements.forEach(el => {
-            Object.keys(obj).forEach(prop => {
-                el.style[prop] = obj[prop];
-            });
+            if (el instanceof HTMLElement) {
+                Object.keys(obj).forEach((prop: any) => {
+                    el.style[prop] = obj[prop];
+                });
+            }
         });
         return this;
     }
@@ -219,11 +249,13 @@ export class Select {
      * Sets HTML element attributes
      * @param {object} obj HTML element attributes
      */
-    setAttr(obj) {
+    setAttr(obj: { [prop: string]: any }): Select {
         this.elements.forEach(el => {
-            Object.keys(obj).forEach(attr => {
-                el.setAttribute(attr, obj[attr]);
-            });
+            if (el instanceof HTMLElement) {
+                Object.keys(obj).forEach(attr => {
+                    el.setAttribute(attr, obj[attr]);
+                });
+            }
         });
         return this;
     }
@@ -231,15 +263,22 @@ export class Select {
      * Returns a map of attribute values for selected elements
      * @param {string} attr Attribute
      */
-    getAttrMap(attr) {
-        return this.map(el => el.getAttribute(attr));
+    getAttrMap(attr: string): string[] {
+        return this.map(el => {
+            if (el instanceof HTMLElement) {
+                return el.getAttribute(attr);
+            }
+            return undefined;
+        });
     }
     /**
      * Enforce a repaint of targeted elements
      */
-    repaint() {
+    repaint(): Select {
         this.elements.forEach(el => {
-            el.offsetHeight; // Accessing offset height somehow triggers a reflow
+            if (el instanceof HTMLElement) {
+                el.offsetHeight; // Accessing offset height somehow triggers a reflow
+            }
         });
         return this;
     }
@@ -247,7 +286,7 @@ export class Select {
      * Returns true if current element is contained in this selector
      * @param {Node | NodeList | HTMLCollection | Select} nodes Element
      */
-    contains(nodes) {
+    contains(nodes: HTMLSelector): boolean {
         return (new Select(nodes)).map(n => {
             for (const el of this.elements) {
                 if (el.contains(n)) {
@@ -261,7 +300,7 @@ export class Select {
      * Static method to create a new HTML node
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
      */
-    static create(nodes) {
+    static create(nodes: HTMLTypeNodes): Select {
         return (new Select(document.createDocumentFragment()))
             .append(nodes)
             .children();

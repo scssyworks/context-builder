@@ -42,6 +42,21 @@
     return Constructor;
   }
 
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
   function _toConsumableArray(arr) {
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
@@ -170,22 +185,28 @@
     function Select(selector) {
       _classCallCheck(this, Select);
 
+      _defineProperty(this, "body", void 0);
+
+      _defineProperty(this, "elements", void 0);
+
+      _defineProperty(this, "parent", void 0);
+
       // Check if document and document.body exist
-      this.body = typeof document !== 'undefined' && document && document.body; // Resolve references
+      this.body = typeof document !== 'undefined' && !!document && document.body; // Resolve references
 
       this.elements = [];
 
       if (this.body && selector) {
         if (typeof selector === 'string') {
           this.elements = _toConsumableArray(document.querySelectorAll(selector));
-        } else if (selector instanceof Node) {
+        } else if (selector instanceof Node || selector instanceof EventTarget) {
           this.elements = [selector];
         } else if (selector instanceof NodeList || selector instanceof HTMLCollection) {
           this.elements = _toConsumableArray(selector);
         } else if (Object.prototype.hasOwnProperty.call(selector, 'length')) {
           // For jQuery or jQuery like objects
-          for (var i = 0; i < selector.length; i++) {
-            this.elements.push(selector[i]);
+          for (var _i = 0; _i < selector.length; _i++) {
+            this.elements.push(selector[_i]);
           }
         } else if (selector instanceof Select) {
           this.elements = _toConsumableArray(selector.elements);
@@ -226,13 +247,15 @@
       value: function query(selector) {
         var selected = [];
         this.elements.forEach(function (el) {
-          var children = _toConsumableArray(el.querySelectorAll(selector));
+          if (el instanceof HTMLElement) {
+            var children = _toConsumableArray(el.querySelectorAll(selector));
 
-          children.forEach(function (child) {
-            if (selected.indexOf(child) === -1) {
-              selected.push(children);
-            }
-          });
+            children.forEach(function (child) {
+              if (selected.indexOf(child) === -1) {
+                selected.push(child);
+              }
+            });
+          }
         });
         return new Select(selected);
       }
@@ -315,7 +338,9 @@
       value: function clear() {
         if (this.body) {
           this.elements.forEach(function (el) {
-            el.innerHTML = '';
+            if (el instanceof HTMLElement) {
+              el.innerHTML = '';
+            }
           });
         }
 
@@ -329,7 +354,11 @@
       key: "htmlMap",
       value: function htmlMap() {
         return this.map(function (el) {
-          return el.innerHTML;
+          if (el instanceof HTMLElement) {
+            return el.innerHTML;
+          }
+
+          return '';
         });
       }
       /**
@@ -340,7 +369,11 @@
       key: "textMap",
       value: function textMap() {
         return this.map(function (el) {
-          return el.textContent || el.innerText;
+          if (el instanceof HTMLElement) {
+            return el.textContent || el.innerText;
+          }
+
+          return '';
         });
       }
       /**
@@ -389,10 +422,9 @@
 
     }, {
       key: "on",
-      value: function on() {
-        var _arguments = arguments;
+      value: function on(eventType, cb, useCapture) {
         this.elements.forEach(function (el) {
-          el.addEventListener.apply(el, _toConsumableArray(_arguments));
+          el.addEventListener(eventType, cb, useCapture);
         });
         return this;
       }
@@ -402,10 +434,9 @@
 
     }, {
       key: "off",
-      value: function off() {
-        var _arguments2 = arguments;
+      value: function off(eventType, cb, useCapture) {
         this.elements.forEach(function (el) {
-          el.removeEventListener.apply(el, _toConsumableArray(_arguments2));
+          el.removeEventListener(eventType, cb, useCapture);
         });
         return this;
       }
@@ -421,8 +452,8 @@
       value: function once(eventType, cb, useCapture) {
         var ref = this;
 
-        var onceCb = function onceCb() {
-          cb.apply(this, arguments);
+        var onceCb = function onceCb(e) {
+          cb.apply(this, [e]);
           ref.elements.forEach(function (el) {
             el.removeEventListener(eventType, onceCb, useCapture);
           });
@@ -431,6 +462,7 @@
         this.elements.forEach(function (el) {
           el.addEventListener(eventType, onceCb, useCapture);
         });
+        return this;
       }
       /**
        * Returns map of DOMRect objects
@@ -440,7 +472,11 @@
       key: "bounds",
       value: function bounds() {
         return this.map(function (el) {
-          return el.getBoundingClientRect();
+          if (el instanceof HTMLElement) {
+            return el.getBoundingClientRect();
+          }
+
+          return null;
         });
       }
       /**
@@ -452,9 +488,11 @@
       key: "setCSSProps",
       value: function setCSSProps(obj) {
         this.elements.forEach(function (el) {
-          Object.keys(obj).forEach(function (prop) {
-            el.style[prop] = obj[prop];
-          });
+          if (el instanceof HTMLElement) {
+            Object.keys(obj).forEach(function (prop) {
+              el.style[prop] = obj[prop];
+            });
+          }
         });
         return this;
       }
@@ -467,9 +505,11 @@
       key: "setAttr",
       value: function setAttr(obj) {
         this.elements.forEach(function (el) {
-          Object.keys(obj).forEach(function (attr) {
-            el.setAttribute(attr, obj[attr]);
-          });
+          if (el instanceof HTMLElement) {
+            Object.keys(obj).forEach(function (attr) {
+              el.setAttribute(attr, obj[attr]);
+            });
+          }
         });
         return this;
       }
@@ -482,7 +522,11 @@
       key: "getAttrMap",
       value: function getAttrMap(attr) {
         return this.map(function (el) {
-          return el.getAttribute(attr);
+          if (el instanceof HTMLElement) {
+            return el.getAttribute(attr);
+          }
+
+          return undefined;
         });
       }
       /**
@@ -493,7 +537,9 @@
       key: "repaint",
       value: function repaint() {
         this.elements.forEach(function (el) {
-          el.offsetHeight; // Accessing offset height somehow triggers a reflow
+          if (el instanceof HTMLElement) {
+            el.offsetHeight; // Accessing offset height somehow triggers a reflow
+          }
         });
         return this;
       }
@@ -547,6 +593,12 @@
     function CursorPlacement(event, element) {
       _classCallCheck(this, CursorPlacement);
 
+      _defineProperty(this, "target", void 0);
+
+      _defineProperty(this, "targetPlacement", void 0);
+
+      _defineProperty(this, "windowProps", void 0);
+
       this.target = new Select(element);
       this.targetPlacement = this.target.bounds()[0];
       this.windowProps = {
@@ -571,10 +623,12 @@
     _createClass(CursorPlacement, [{
       key: "getClientX",
       value: function getClientX(event) {
-        var displacement = event.clientX + this.targetPlacement.width - this.windowProps.width;
+        if (this.targetPlacement) {
+          var displacement = event.clientX + this.targetPlacement.width - this.windowProps.width;
 
-        if (displacement > 0) {
-          return event.clientX - displacement - 4;
+          if (displacement > 0) {
+            return event.clientX - displacement - 4;
+          }
         }
 
         return event.clientX;
@@ -587,10 +641,12 @@
     }, {
       key: "getClientY",
       value: function getClientY(event) {
-        var displacement = event.clientY + this.targetPlacement.height - this.windowProps.height;
+        if (this.targetPlacement) {
+          var displacement = event.clientY + this.targetPlacement.height - this.windowProps.height;
 
-        if (displacement > 0) {
-          return event.clientY - displacement - 4;
+          if (displacement > 0) {
+            return event.clientY - displacement - 4;
+          }
         }
 
         return event.clientY;
@@ -600,9 +656,15 @@
     return CursorPlacement;
   }();
 
-  var _listeners = new WeakMap();
-
   var _open = new WeakMap();
+
+  var _exitFunction = new WeakMap();
+
+  var _onClick = new WeakMap();
+
+  var _onContextMenu = new WeakMap();
+
+  var _onRootClick = new WeakMap();
 
   var ContextMenu = /*#__PURE__*/function () {
     function ContextMenu(target, config) {
@@ -610,15 +672,81 @@
 
       _classCallCheck(this, ContextMenu);
 
-      _listeners.set(this, {
-        writable: true,
-        value: []
-      });
-
       _open.set(this, {
         writable: true,
         value: false
       });
+
+      _exitFunction.set(this, {
+        writable: true,
+        value: function value() {
+          _this.rootElement = _this.rootElement.detach().children();
+
+          _classPrivateFieldSet(_this, _open, false);
+        }
+      });
+
+      _onClick.set(this, {
+        writable: true,
+        value: function value() {
+          if (_this.config && typeof _this.config.onDeactivate === 'function') {
+            _classPrivateFieldSet(_this, _open, true);
+
+            _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
+          } else {
+            _classPrivateFieldGet(_this, _exitFunction).call(_this);
+          }
+        }
+      });
+
+      _onContextMenu.set(this, {
+        writable: true,
+        value: function value(e) {
+          e.preventDefault();
+          e.stopPropagation(); // For nested context menus
+
+          if (!_classPrivateFieldGet(_this, _open)) {
+            _this.contextTarget.append(_this.rootElement);
+
+            new CursorPlacement(e, _this.rootElement);
+
+            if (_this.config && typeof _this.config.onActivate === 'function') {
+              _this.rootElement.repaint();
+
+              _this.config.onActivate(_this.rootElement);
+            }
+          }
+        }
+      });
+
+      _onRootClick.set(this, {
+        writable: true,
+        value: function value(e) {
+          e.stopPropagation();
+
+          if (_this.config && typeof _this.config.onClick === 'function') {
+            var shouldExit = _this.config.onClick.apply(new Select(e.target), [e]);
+
+            if (shouldExit) {
+              if (typeof _this.config.onDeactivate === 'function') {
+                _classPrivateFieldSet(_this, _open, true);
+
+                _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
+              } else {
+                _classPrivateFieldGet(_this, _exitFunction).call(_this);
+              }
+            }
+          }
+        }
+      });
+
+      _defineProperty(this, "contextTarget", void 0);
+
+      _defineProperty(this, "isSupported", void 0);
+
+      _defineProperty(this, "rootElement", void 0);
+
+      _defineProperty(this, "config", {});
 
       if (config && _typeof(config) === 'object') {
         this.config = Object.freeze(config);
@@ -627,70 +755,18 @@
       this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
       this.isSupported = !!this.contextTarget.body;
       this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
-      var ref = this;
-
-      var onContextMenu = function onContextMenu(e) {
-        e.preventDefault();
-
-        if (!_classPrivateFieldGet(ref, _open)) {
-          new Select(this).append(ref.rootElement);
-          new CursorPlacement(e, ref.rootElement);
-
-          if (ref.config && typeof ref.config.onActivate === 'function') {
-            ref.rootElement.repaint();
-            config.onActivate(ref.rootElement);
-
-            _classPrivateFieldSet(ref, _open, true);
-          }
-        }
-      };
-
-      var exitFunction = function exitFunction() {
-        _this.rootElement = _this.rootElement.detach().children();
-
-        _classPrivateFieldSet(_this, _open, false);
-      };
-
-      var onClick = function onClick() {
-        if (_this.config && typeof config.onDeactivate === 'function') {
-          config.onDeactivate(_this.rootElement, exitFunction);
-        } else {
-          exitFunction();
-        }
-      };
-
-      var onRootClick = function onRootClick(e) {
-        e.stopPropagation();
-
-        if (_this.config && typeof _this.config.onClick === 'function') {
-          var shouldExit = _this.config.onClick.apply(new Select(e.target), [e]);
-
-          if (shouldExit) {
-            if (typeof _this.config.onDeactivate === 'function') {
-              _this.config.onDeactivate(_this.rootElement, exitFunction);
-            } else {
-              exitFunction();
-            }
-          }
-        }
-      };
-
-      _classPrivateFieldGet(this, _listeners).push({
-        onContextMenu: onContextMenu
-      }, {
-        onClick: onClick
-      }, {
-        onRootClick: onRootClick
-      });
-
-      this.contextTarget.on('contextmenu', onContextMenu).on('click', onClick);
-      this.rootElement.on('click', onRootClick);
+      this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).on('click', _classPrivateFieldGet(this, _onClick));
+      this.rootElement.on('click', _classPrivateFieldGet(this, _onRootClick));
     }
 
     _createClass(ContextMenu, [{
       key: "add",
       value: function add() {
-        var elements = Array.prototype.slice.call(arguments);
+        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+          args[_key] = arguments[_key];
+        }
+
+        var elements = [].concat(args);
 
         var _iterator = _createForOfIteratorHelper(elements),
             _step;
@@ -714,20 +790,8 @@
     }, {
       key: "cleanup",
       value: function cleanup() {
-        var onContextMenu = _classPrivateFieldGet(this, _listeners).filter(function (fn) {
-          return Object.prototype.hasOwnProperty.call(fn, 'onContextMenu');
-        })[0].onContextMenu;
-
-        var onClick = _classPrivateFieldGet(this, _listeners).filter(function (fn) {
-          return Object.prototype.hasOwnProperty.call(fn, 'onClick');
-        })[0].onClick;
-
-        var onRootClick = _classPrivateFieldGet(this, _listeners).filter(function (fn) {
-          return Object.prototype.hasOwnProperty.call(fn, 'onRootClick');
-        })[0].onRootClick;
-
-        this.contextTarget.off('contextmenu', onContextMenu).off('click', onClick);
-        this.rootElement.off('click', onRootClick);
+        this.contextTarget.off('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).off('click', _classPrivateFieldGet(this, _onClick));
+        this.rootElement.off('click', _classPrivateFieldGet(this, _onRootClick));
       }
     }]);
 
@@ -737,6 +801,12 @@
   var ContextList = /*#__PURE__*/function () {
     function ContextList(title, config) {
       _classCallCheck(this, ContextList);
+
+      _defineProperty(this, "config", {});
+
+      _defineProperty(this, "rootElement", void 0);
+
+      _defineProperty(this, "listElement", void 0);
 
       if (config && _typeof(config) === 'object') {
         this.config = Object.freeze(config);
@@ -753,7 +823,11 @@
     _createClass(ContextList, [{
       key: "add",
       value: function add() {
-        var elements = Array.prototype.slice.call(arguments);
+        for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+          args[_key2] = arguments[_key2];
+        }
+
+        var elements = [].concat(args);
 
         var _iterator2 = _createForOfIteratorHelper(elements),
             _step2;
@@ -787,8 +861,12 @@
   var ContextItem = function ContextItem(title, config) {
     _classCallCheck(this, ContextItem);
 
+    _defineProperty(this, "config", {});
+
+    _defineProperty(this, "rootElement", void 0);
+
     if (config && _typeof(config) === 'object') {
-      this.config = Object.freeze();
+      this.config = Object.freeze(config);
     }
 
     this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>");

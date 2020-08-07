@@ -6,11 +6,19 @@ const menu = new ContextMenu(null, {
         return true;
     },
     onActivate(rootEl) {
-        rootEl.map(el => el.classList.add('show'));
+        rootEl.map(el => {
+            if (el instanceof HTMLElement) {
+                el.classList.add('show')
+            }
+        });
     },
     onDeactivate(rootEl, fn) {
         rootEl.once('transitionend', fn);
-        rootEl.map(el => el.classList.remove('show'));
+        rootEl.map(el => {
+            if (el instanceof HTMLElement) {
+                el.classList.remove('show');
+            }
+        });
     }
 });
 menu.add(
