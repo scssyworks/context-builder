@@ -89,8 +89,8 @@ export class ContextMenu<T extends HTMLElement> {
         );
         this.contextTarget
             .on('contextmenu', this.#onContextMenu);
-        if (this.contextTarget.body) {
-            new Select(this.contextTarget.body as HTMLElement).on('click', this.#onClick);
+        if (typeof document !== 'undefined') {
+            new Select(document).on('click', this.#onClick);
         }
         this.#beacon.listen((shouldClose) => {
             if (shouldClose) {

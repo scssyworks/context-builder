@@ -18,18 +18,18 @@ if (typeof window !== 'undefined') {
 
 export class Beacon<T extends HTMLElement> {
     #parentThis: ContextMenu<T>;
-    #body: HTMLElement | undefined;
+    #root: Document | undefined;
     #beaconEvent = 'closecontextmenu';
     #resolver?: (value: boolean) => void;
     constructor(parentThis: ContextMenu<T>) {
         this.#parentThis = parentThis;
         if (typeof document !== 'undefined') {
-            this.#body = document.body;
+            this.#root = document;
         }
     }
 
     emit(): void {
-        if (this.#body) {
+        if (this.#root) {
             const contextMenuClose = new CustomEvent(this.#beaconEvent, {
                 cancelable: true,
                 bubbles: true,
@@ -37,7 +37,7 @@ export class Beacon<T extends HTMLElement> {
                     originContext: this.#parentThis
                 }
             });
-            this.#body.dispatchEvent(contextMenuClose);
+            this.#root.dispatchEvent(contextMenuClose);
         }
     }
 
@@ -50,11 +50,11 @@ export class Beacon<T extends HTMLElement> {
 
     listen(resolve: (value: boolean) => void): void {
         this.#resolver = resolve;
-        this.#body?.addEventListener(this.#beaconEvent, this.#beaconListener);
+        this.#root?.addEventListener(this.#beaconEvent, this.#beaconListener);
     }
 
     off(): void {
-        this.#body?.removeEventListener(this.#beaconEvent, this.#beaconListener);
+        this.#root?.removeEventListener(this.#beaconEvent, this.#beaconListener);
         this.#resolver = undefined;
     }
 }
