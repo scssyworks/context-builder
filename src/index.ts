@@ -1,5 +1,6 @@
 import { Select } from "./Select";
 import { CursorPlacement } from "./CursorPlacement";
+import { Beacon } from "./Beacon";
 
 export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     rootElement?: T;
@@ -19,24 +20,31 @@ export interface ContextItemConfig<T extends HTMLElement> {
 
 export class ContextMenu<T extends HTMLElement> {
     #open = false;
+    #active = false;
+    #beacon: Beacon<T>;
     #exitFunction = (): void => {
         this.rootElement = this.rootElement.detach().children();
         this.#open = false;
+        this.#active = false;
     }
     #onClick = (): void => {
-        if (
-            this.config
-            && typeof this.config.onDeactivate === 'function'
-        ) {
-            this.#open = true;
-            this.config.onDeactivate(this.rootElement, this.#exitFunction);
-        } else {
-            this.#exitFunction();
+        if (this.#active) {
+            if (
+                this.config
+                && typeof this.config.onDeactivate === 'function'
+            ) {
+                this.#open = true;
+                this.config.onDeactivate(this.rootElement, this.#exitFunction);
+            } else {
+                this.#exitFunction();
+            }
         }
     }
     #onContextMenu = (e: MouseEvent): void => {
         e.preventDefault();
         e.stopPropagation(); // For nested context menus
+        this.#beacon.emit(); // Sends notification to other context menu instances to automatically close
+        this.#active = true;
         if (!this.#open) {
             this.contextTarget.append(this.rootElement);
             new CursorPlacement(e, this.rootElement);
@@ -57,12 +65,7 @@ export class ContextMenu<T extends HTMLElement> {
         ) {
             const shouldExit = this.config.onClick.apply(new Select(e.target), [e]);
             if (shouldExit) {
-                if (typeof this.config.onDeactivate === 'function') {
-                    this.#open = true;
-                    this.config.onDeactivate(this.rootElement, this.#exitFunction);
-                } else {
-                    this.#exitFunction();
-                }
+                this.#onClick();
             }
         }
     }
@@ -71,6 +74,7 @@ export class ContextMenu<T extends HTMLElement> {
     rootElement: Select;
     config: ContextMenuConfig<T, Event> = {};
     constructor(target: string | null, config?: ContextMenuConfig<T, Event>) {
+        this.#beacon = new Beacon(this);
         if (config && typeof config === 'object') {
             this.config = Object.freeze(config);
         }
@@ -84,8 +88,15 @@ export class ContextMenu<T extends HTMLElement> {
                 : `<ul class="context-menu-list"></ul>`
         );
         this.contextTarget
-            .on('contextmenu', this.#onContextMenu)
-            .on('click', this.#onClick);
+            .on('contextmenu', this.#onContextMenu);
+        if (this.contextTarget.body) {
+            new Select(this.contextTarget.body as HTMLElement).on('click', this.#onClick);
+        }
+        this.#beacon.listen((shouldClose) => {
+            if (shouldClose) {
+                this.#onClick();
+            }
+        });
         this.rootElement.on('click', this.#onRootClick);
     }
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T> {
@@ -105,6 +116,7 @@ export class ContextMenu<T extends HTMLElement> {
             .off('contextmenu', this.#onContextMenu)
             .off('click', this.#onClick);
         this.rootElement.off('click', this.#onRootClick);
+        this.#beacon.off();
     }
 }
 

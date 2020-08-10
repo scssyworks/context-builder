@@ -56,6 +56,140 @@
     return obj;
   }
 
+  function _inherits(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) _setPrototypeOf(subClass, superClass);
+  }
+
+  function _getPrototypeOf(o) {
+    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+      return o.__proto__ || Object.getPrototypeOf(o);
+    };
+    return _getPrototypeOf(o);
+  }
+
+  function _setPrototypeOf(o, p) {
+    _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+      o.__proto__ = p;
+      return o;
+    };
+
+    return _setPrototypeOf(o, p);
+  }
+
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function _construct(Parent, args, Class) {
+    if (_isNativeReflectConstruct()) {
+      _construct = Reflect.construct;
+    } else {
+      _construct = function _construct(Parent, args, Class) {
+        var a = [null];
+        a.push.apply(a, args);
+        var Constructor = Function.bind.apply(Parent, a);
+        var instance = new Constructor();
+        if (Class) _setPrototypeOf(instance, Class.prototype);
+        return instance;
+      };
+    }
+
+    return _construct.apply(null, arguments);
+  }
+
+  function _isNativeFunction(fn) {
+    return Function.toString.call(fn).indexOf("[native code]") !== -1;
+  }
+
+  function _wrapNativeSuper(Class) {
+    var _cache = typeof Map === "function" ? new Map() : undefined;
+
+    _wrapNativeSuper = function _wrapNativeSuper(Class) {
+      if (Class === null || !_isNativeFunction(Class)) return Class;
+
+      if (typeof Class !== "function") {
+        throw new TypeError("Super expression must either be null or a function");
+      }
+
+      if (typeof _cache !== "undefined") {
+        if (_cache.has(Class)) return _cache.get(Class);
+
+        _cache.set(Class, Wrapper);
+      }
+
+      function Wrapper() {
+        return _construct(Class, arguments, _getPrototypeOf(this).constructor);
+      }
+
+      Wrapper.prototype = Object.create(Class.prototype, {
+        constructor: {
+          value: Wrapper,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      });
+      return _setPrototypeOf(Wrapper, Class);
+    };
+
+    return _wrapNativeSuper(Class);
+  }
+
+  function _assertThisInitialized(self) {
+    if (self === void 0) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return self;
+  }
+
+  function _possibleConstructorReturn(self, call) {
+    if (call && (typeof call === "object" || typeof call === "function")) {
+      return call;
+    }
+
+    return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    var hasNativeReflectConstruct = _isNativeReflectConstruct();
+
+    return function _createSuperInternal() {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (hasNativeReflectConstruct) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
+  }
+
   function _toConsumableArray(arr) {
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
@@ -655,7 +789,136 @@
     return CursorPlacement;
   }();
 
+  if (typeof window !== 'undefined') {
+    // Polyfill custom event
+    if (typeof window.CustomEvent === 'undefined') {
+      var _CustomEvent = /*#__PURE__*/function (_Event) {
+        _inherits(_CustomEvent, _Event);
+
+        var _super = _createSuper(_CustomEvent);
+
+        function _CustomEvent(event, params) {
+          var _this;
+
+          _classCallCheck(this, _CustomEvent);
+
+          _this = _super.call(this, event);
+          params = params || {
+            bubbles: false,
+            cancelable: false,
+            detail: undefined
+          };
+          var evt = document.createEvent('CustomEvent');
+          evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+          return _possibleConstructorReturn(_this, evt);
+        }
+
+        return _CustomEvent;
+      }( /*#__PURE__*/_wrapNativeSuper(Event));
+
+      _CustomEvent.prototype = window.Event.prototype;
+      window.CustomEvent = _CustomEvent;
+    }
+  }
+
+  var _parentThis = new WeakMap();
+
+  var _body = new WeakMap();
+
+  var _beaconEvent = new WeakMap();
+
+  var _resolver = new WeakMap();
+
+  var _beaconListener = new WeakMap();
+
+  var Beacon = /*#__PURE__*/function () {
+    function Beacon(parentThis) {
+      var _this2 = this;
+
+      _classCallCheck(this, Beacon);
+
+      _parentThis.set(this, {
+        writable: true,
+        value: void 0
+      });
+
+      _body.set(this, {
+        writable: true,
+        value: void 0
+      });
+
+      _beaconEvent.set(this, {
+        writable: true,
+        value: 'closecontextmenu'
+      });
+
+      _resolver.set(this, {
+        writable: true,
+        value: void 0
+      });
+
+      _beaconListener.set(this, {
+        writable: true,
+        value: function value(e) {
+          var _ref = e.detail,
+              originContext = _ref.originContext;
+
+          if (typeof _classPrivateFieldGet(_this2, _resolver) === 'function') {
+            _classPrivateFieldGet(_this2, _resolver).call(_this2, originContext !== _classPrivateFieldGet(_this2, _parentThis));
+          }
+        }
+      });
+
+      _classPrivateFieldSet(this, _parentThis, parentThis);
+
+      if (typeof document !== 'undefined') {
+        _classPrivateFieldSet(this, _body, document.body);
+      }
+    }
+
+    _createClass(Beacon, [{
+      key: "emit",
+      value: function emit() {
+        if (_classPrivateFieldGet(this, _body)) {
+          var contextMenuClose = new CustomEvent(_classPrivateFieldGet(this, _beaconEvent), {
+            cancelable: true,
+            bubbles: true,
+            detail: {
+              originContext: _classPrivateFieldGet(this, _parentThis)
+            }
+          });
+
+          _classPrivateFieldGet(this, _body).dispatchEvent(contextMenuClose);
+        }
+      }
+    }, {
+      key: "listen",
+      value: function listen(resolve) {
+        var _classPrivateFieldGet2;
+
+        _classPrivateFieldSet(this, _resolver, resolve);
+
+        (_classPrivateFieldGet2 = _classPrivateFieldGet(this, _body)) === null || _classPrivateFieldGet2 === void 0 ? void 0 : _classPrivateFieldGet2.addEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
+      }
+    }, {
+      key: "off",
+      value: function off() {
+        var _classPrivateFieldGet3;
+
+        (_classPrivateFieldGet3 = _classPrivateFieldGet(this, _body)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.removeEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
+
+        _classPrivateFieldSet(this, _resolver, undefined);
+      }
+    }]);
+
+    return Beacon;
+  }();
+
   var _open = new WeakMap();
+
+  var _active = new WeakMap();
+
+  var _beacon = new WeakMap();
 
   var _exitFunction = new WeakMap();
 
@@ -676,24 +939,38 @@
         value: false
       });
 
+      _active.set(this, {
+        writable: true,
+        value: false
+      });
+
+      _beacon.set(this, {
+        writable: true,
+        value: void 0
+      });
+
       _exitFunction.set(this, {
         writable: true,
         value: function value() {
           _this.rootElement = _this.rootElement.detach().children();
 
           _classPrivateFieldSet(_this, _open, false);
+
+          _classPrivateFieldSet(_this, _active, false);
         }
       });
 
       _onClick.set(this, {
         writable: true,
         value: function value() {
-          if (_this.config && typeof _this.config.onDeactivate === 'function') {
-            _classPrivateFieldSet(_this, _open, true);
+          if (_classPrivateFieldGet(_this, _active)) {
+            if (_this.config && typeof _this.config.onDeactivate === 'function') {
+              _classPrivateFieldSet(_this, _open, true);
 
-            _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
-          } else {
-            _classPrivateFieldGet(_this, _exitFunction).call(_this);
+              _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
+            } else {
+              _classPrivateFieldGet(_this, _exitFunction).call(_this);
+            }
           }
         }
       });
@@ -703,6 +980,11 @@
         value: function value(e) {
           e.preventDefault();
           e.stopPropagation(); // For nested context menus
+
+          _classPrivateFieldGet(_this, _beacon).emit(); // Sends notification to other context menu instances to automatically close
+
+
+          _classPrivateFieldSet(_this, _active, true);
 
           if (!_classPrivateFieldGet(_this, _open)) {
             _this.contextTarget.append(_this.rootElement);
@@ -727,13 +1009,7 @@
             var shouldExit = _this.config.onClick.apply(new Select(e.target), [e]);
 
             if (shouldExit) {
-              if (typeof _this.config.onDeactivate === 'function') {
-                _classPrivateFieldSet(_this, _open, true);
-
-                _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
-              } else {
-                _classPrivateFieldGet(_this, _exitFunction).call(_this);
-              }
+              _classPrivateFieldGet(_this, _onClick).call(_this);
             }
           }
         }
@@ -747,6 +1023,8 @@
 
       _defineProperty(this, "config", {});
 
+      _classPrivateFieldSet(this, _beacon, new Beacon(this));
+
       if (config && _typeof(config) === 'object') {
         this.config = Object.freeze(config);
       }
@@ -754,7 +1032,18 @@
       this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
       this.isSupported = !!this.contextTarget.body;
       this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
-      this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).on('click', _classPrivateFieldGet(this, _onClick));
+      this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu));
+
+      if (this.contextTarget.body) {
+        new Select(this.contextTarget.body).on('click', _classPrivateFieldGet(this, _onClick));
+      }
+
+      _classPrivateFieldGet(this, _beacon).listen(function (shouldClose) {
+        if (shouldClose) {
+          _classPrivateFieldGet(_this, _onClick).call(_this);
+        }
+      });
+
       this.rootElement.on('click', _classPrivateFieldGet(this, _onRootClick));
     }
 
@@ -791,6 +1080,8 @@
       value: function cleanup() {
         this.contextTarget.off('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).off('click', _classPrivateFieldGet(this, _onClick));
         this.rootElement.off('click', _classPrivateFieldGet(this, _onRootClick));
+
+        _classPrivateFieldGet(this, _beacon).off();
       }
     }]);
 
@@ -893,7 +1184,29 @@
       });
     }
   });
+  var childMenu = new ContextMenu('h2.bg-secondary', {
+    onClick: function onClick() {
+      console.log(this.textMap());
+      return true;
+    },
+    onActivate: function onActivate(rootEl) {
+      rootEl.map(function (el) {
+        if (el instanceof HTMLElement) {
+          el.classList.add('show');
+        }
+      });
+    },
+    onDeactivate: function onDeactivate(rootEl, fn) {
+      rootEl.once('transitionend', fn);
+      rootEl.map(function (el) {
+        if (el instanceof HTMLElement) {
+          el.classList.remove('show');
+        }
+      });
+    }
+  });
   menu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'), new ContextItem('List Item 4'), new ContextItem('List Item 5'), new ContextItem('List Item 6'));
+  childMenu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'));
 
 }());
 //# sourceMappingURL=contextBuilder.iife.js.map
