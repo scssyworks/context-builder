@@ -656,7 +656,125 @@
     return CursorPlacement;
   }();
 
+  if (typeof window !== 'undefined') {
+    // Polyfill custom event
+    if (typeof window.CustomEvent === 'undefined') {
+      var _CustomEvent = function _CustomEvent(event, params) {
+        _classCallCheck(this, _CustomEvent);
+
+        params = params || {
+          bubbles: false,
+          cancelable: false,
+          detail: undefined
+        };
+        var evt = document.createEvent('CustomEvent');
+        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+        return evt;
+      };
+
+      _CustomEvent.prototype = window.Event.prototype;
+      window.CustomEvent = _CustomEvent;
+    }
+  }
+
+  var _parentThis = new WeakMap();
+
+  var _body = new WeakMap();
+
+  var _beaconEvent = new WeakMap();
+
+  var _resolver = new WeakMap();
+
+  var _beaconListener = new WeakMap();
+
+  var Beacon = /*#__PURE__*/function () {
+    function Beacon(parentThis) {
+      var _this = this;
+
+      _classCallCheck(this, Beacon);
+
+      _parentThis.set(this, {
+        writable: true,
+        value: void 0
+      });
+
+      _body.set(this, {
+        writable: true,
+        value: void 0
+      });
+
+      _beaconEvent.set(this, {
+        writable: true,
+        value: 'closecontextmenu'
+      });
+
+      _resolver.set(this, {
+        writable: true,
+        value: void 0
+      });
+
+      _beaconListener.set(this, {
+        writable: true,
+        value: function value(e) {
+          var _ref = e.detail,
+              originContext = _ref.originContext;
+
+          if (typeof _classPrivateFieldGet(_this, _resolver) === 'function') {
+            _classPrivateFieldGet(_this, _resolver).call(_this, originContext !== _classPrivateFieldGet(_this, _parentThis));
+          }
+        }
+      });
+
+      _classPrivateFieldSet(this, _parentThis, parentThis);
+
+      if (typeof document !== 'undefined') {
+        _classPrivateFieldSet(this, _body, document.body);
+      }
+    }
+
+    _createClass(Beacon, [{
+      key: "emit",
+      value: function emit() {
+        if (_classPrivateFieldGet(this, _body)) {
+          var contextMenuClose = new CustomEvent(_classPrivateFieldGet(this, _beaconEvent), {
+            cancelable: true,
+            bubbles: true,
+            detail: {
+              originContext: _classPrivateFieldGet(this, _parentThis)
+            }
+          });
+
+          _classPrivateFieldGet(this, _body).dispatchEvent(contextMenuClose);
+        }
+      }
+    }, {
+      key: "listen",
+      value: function listen(resolve) {
+        var _classPrivateFieldGet2;
+
+        _classPrivateFieldSet(this, _resolver, resolve);
+
+        (_classPrivateFieldGet2 = _classPrivateFieldGet(this, _body)) === null || _classPrivateFieldGet2 === void 0 ? void 0 : _classPrivateFieldGet2.addEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
+      }
+    }, {
+      key: "off",
+      value: function off() {
+        var _classPrivateFieldGet3;
+
+        (_classPrivateFieldGet3 = _classPrivateFieldGet(this, _body)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.removeEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
+
+        _classPrivateFieldSet(this, _resolver, undefined);
+      }
+    }]);
+
+    return Beacon;
+  }();
+
   var _open = new WeakMap();
+
+  var _active = new WeakMap();
+
+  var _beacon = new WeakMap();
 
   var _exitFunction = new WeakMap();
 
@@ -677,24 +795,38 @@
         value: false
       });
 
+      _active.set(this, {
+        writable: true,
+        value: false
+      });
+
+      _beacon.set(this, {
+        writable: true,
+        value: void 0
+      });
+
       _exitFunction.set(this, {
         writable: true,
         value: function value() {
           _this.rootElement = _this.rootElement.detach().children();
 
           _classPrivateFieldSet(_this, _open, false);
+
+          _classPrivateFieldSet(_this, _active, false);
         }
       });
 
       _onClick.set(this, {
         writable: true,
         value: function value() {
-          if (_this.config && typeof _this.config.onDeactivate === 'function') {
-            _classPrivateFieldSet(_this, _open, true);
+          if (_classPrivateFieldGet(_this, _active)) {
+            if (_this.config && typeof _this.config.onDeactivate === 'function') {
+              _classPrivateFieldSet(_this, _open, true);
 
-            _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
-          } else {
-            _classPrivateFieldGet(_this, _exitFunction).call(_this);
+              _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
+            } else {
+              _classPrivateFieldGet(_this, _exitFunction).call(_this);
+            }
           }
         }
       });
@@ -704,6 +836,11 @@
         value: function value(e) {
           e.preventDefault();
           e.stopPropagation(); // For nested context menus
+
+          _classPrivateFieldGet(_this, _beacon).emit(); // Sends notification to other context menu instances to automatically close
+
+
+          _classPrivateFieldSet(_this, _active, true);
 
           if (!_classPrivateFieldGet(_this, _open)) {
             _this.contextTarget.append(_this.rootElement);
@@ -728,13 +865,7 @@
             var shouldExit = _this.config.onClick.apply(new Select(e.target), [e]);
 
             if (shouldExit) {
-              if (typeof _this.config.onDeactivate === 'function') {
-                _classPrivateFieldSet(_this, _open, true);
-
-                _this.config.onDeactivate(_this.rootElement, _classPrivateFieldGet(_this, _exitFunction));
-              } else {
-                _classPrivateFieldGet(_this, _exitFunction).call(_this);
-              }
+              _classPrivateFieldGet(_this, _onClick).call(_this);
             }
           }
         }
@@ -748,6 +879,8 @@
 
       _defineProperty(this, "config", {});
 
+      _classPrivateFieldSet(this, _beacon, new Beacon(this));
+
       if (config && _typeof(config) === 'object') {
         this.config = Object.freeze(config);
       }
@@ -755,7 +888,18 @@
       this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
       this.isSupported = !!this.contextTarget.body;
       this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
-      this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).on('click', _classPrivateFieldGet(this, _onClick));
+      this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu));
+
+      if (this.contextTarget.body) {
+        new Select(this.contextTarget.body).on('click', _classPrivateFieldGet(this, _onClick));
+      }
+
+      _classPrivateFieldGet(this, _beacon).listen(function (shouldClose) {
+        if (shouldClose) {
+          _classPrivateFieldGet(_this, _onClick).call(_this);
+        }
+      });
+
       this.rootElement.on('click', _classPrivateFieldGet(this, _onRootClick));
     }
 
@@ -792,6 +936,8 @@
       value: function cleanup() {
         this.contextTarget.off('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).off('click', _classPrivateFieldGet(this, _onClick));
         this.rootElement.off('click', _classPrivateFieldGet(this, _onRootClick));
+
+        _classPrivateFieldGet(this, _beacon).off();
       }
     }]);
 

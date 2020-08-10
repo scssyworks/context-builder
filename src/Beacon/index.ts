@@ -3,9 +3,8 @@ import { ContextMenu } from "..";
 if (typeof window !== 'undefined') {
     // Polyfill custom event
     if (typeof window.CustomEvent === 'undefined') {
-        class CustomEvent<T> extends Event {
+        class CustomEvent<T> {
             constructor(event: string, params?: CustomEventInit<T>) {
-                super(event);
                 params = params || { bubbles: false, cancelable: false, detail: undefined };
                 const evt = document.createEvent('CustomEvent');
                 evt.initCustomEvent(event, params.bubbles as boolean, params.cancelable as boolean, params.detail);
@@ -29,7 +28,7 @@ export class Beacon<T extends HTMLElement> {
         }
     }
 
-    emit() {
+    emit(): void {
         if (this.#body) {
             const contextMenuClose = new CustomEvent(this.#beaconEvent, {
                 cancelable: true,
@@ -42,19 +41,19 @@ export class Beacon<T extends HTMLElement> {
         }
     }
 
-    #beaconListener = (e: Event) => {
+    #beaconListener = (e: Event): void => {
         const { originContext } = (e as CustomEvent).detail as { originContext: ContextMenu<T> };
         if (typeof this.#resolver === 'function') {
             this.#resolver(originContext !== this.#parentThis);
         }
     }
 
-    listen(resolve: (value: boolean) => void) {
+    listen(resolve: (value: boolean) => void): void {
         this.#resolver = resolve;
         this.#body?.addEventListener(this.#beaconEvent, this.#beaconListener);
     }
 
-    off() {
+    off(): void {
         this.#body?.removeEventListener(this.#beaconEvent, this.#beaconListener);
         this.#resolver = undefined;
     }

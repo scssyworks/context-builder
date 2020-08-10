@@ -56,140 +56,6 @@
     return obj;
   }
 
-  function _inherits(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function");
-    }
-
-    subClass.prototype = Object.create(superClass && superClass.prototype, {
-      constructor: {
-        value: subClass,
-        writable: true,
-        configurable: true
-      }
-    });
-    if (superClass) _setPrototypeOf(subClass, superClass);
-  }
-
-  function _getPrototypeOf(o) {
-    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-      return o.__proto__ || Object.getPrototypeOf(o);
-    };
-    return _getPrototypeOf(o);
-  }
-
-  function _setPrototypeOf(o, p) {
-    _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-      o.__proto__ = p;
-      return o;
-    };
-
-    return _setPrototypeOf(o, p);
-  }
-
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function _construct(Parent, args, Class) {
-    if (_isNativeReflectConstruct()) {
-      _construct = Reflect.construct;
-    } else {
-      _construct = function _construct(Parent, args, Class) {
-        var a = [null];
-        a.push.apply(a, args);
-        var Constructor = Function.bind.apply(Parent, a);
-        var instance = new Constructor();
-        if (Class) _setPrototypeOf(instance, Class.prototype);
-        return instance;
-      };
-    }
-
-    return _construct.apply(null, arguments);
-  }
-
-  function _isNativeFunction(fn) {
-    return Function.toString.call(fn).indexOf("[native code]") !== -1;
-  }
-
-  function _wrapNativeSuper(Class) {
-    var _cache = typeof Map === "function" ? new Map() : undefined;
-
-    _wrapNativeSuper = function _wrapNativeSuper(Class) {
-      if (Class === null || !_isNativeFunction(Class)) return Class;
-
-      if (typeof Class !== "function") {
-        throw new TypeError("Super expression must either be null or a function");
-      }
-
-      if (typeof _cache !== "undefined") {
-        if (_cache.has(Class)) return _cache.get(Class);
-
-        _cache.set(Class, Wrapper);
-      }
-
-      function Wrapper() {
-        return _construct(Class, arguments, _getPrototypeOf(this).constructor);
-      }
-
-      Wrapper.prototype = Object.create(Class.prototype, {
-        constructor: {
-          value: Wrapper,
-          enumerable: false,
-          writable: true,
-          configurable: true
-        }
-      });
-      return _setPrototypeOf(Wrapper, Class);
-    };
-
-    return _wrapNativeSuper(Class);
-  }
-
-  function _assertThisInitialized(self) {
-    if (self === void 0) {
-      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-    }
-
-    return self;
-  }
-
-  function _possibleConstructorReturn(self, call) {
-    if (call && (typeof call === "object" || typeof call === "function")) {
-      return call;
-    }
-
-    return _assertThisInitialized(self);
-  }
-
-  function _createSuper(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct();
-
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf(Derived),
-          result;
-
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-
-      return _possibleConstructorReturn(this, result);
-    };
-  }
-
   function _toConsumableArray(arr) {
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
   }
@@ -792,29 +658,18 @@
   if (typeof window !== 'undefined') {
     // Polyfill custom event
     if (typeof window.CustomEvent === 'undefined') {
-      var _CustomEvent = /*#__PURE__*/function (_Event) {
-        _inherits(_CustomEvent, _Event);
+      var _CustomEvent = function _CustomEvent(event, params) {
+        _classCallCheck(this, _CustomEvent);
 
-        var _super = _createSuper(_CustomEvent);
-
-        function _CustomEvent(event, params) {
-          var _this;
-
-          _classCallCheck(this, _CustomEvent);
-
-          _this = _super.call(this, event);
-          params = params || {
-            bubbles: false,
-            cancelable: false,
-            detail: undefined
-          };
-          var evt = document.createEvent('CustomEvent');
-          evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
-          return _possibleConstructorReturn(_this, evt);
-        }
-
-        return _CustomEvent;
-      }( /*#__PURE__*/_wrapNativeSuper(Event));
+        params = params || {
+          bubbles: false,
+          cancelable: false,
+          detail: undefined
+        };
+        var evt = document.createEvent('CustomEvent');
+        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
+        return evt;
+      };
 
       _CustomEvent.prototype = window.Event.prototype;
       window.CustomEvent = _CustomEvent;
@@ -833,7 +688,7 @@
 
   var Beacon = /*#__PURE__*/function () {
     function Beacon(parentThis) {
-      var _this2 = this;
+      var _this = this;
 
       _classCallCheck(this, Beacon);
 
@@ -863,8 +718,8 @@
           var _ref = e.detail,
               originContext = _ref.originContext;
 
-          if (typeof _classPrivateFieldGet(_this2, _resolver) === 'function') {
-            _classPrivateFieldGet(_this2, _resolver).call(_this2, originContext !== _classPrivateFieldGet(_this2, _parentThis));
+          if (typeof _classPrivateFieldGet(_this, _resolver) === 'function') {
+            _classPrivateFieldGet(_this, _resolver).call(_this, originContext !== _classPrivateFieldGet(_this, _parentThis));
           }
         }
       });
