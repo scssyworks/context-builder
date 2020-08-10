@@ -679,7 +679,7 @@
 
   var _parentThis = new WeakMap();
 
-  var _body = new WeakMap();
+  var _root = new WeakMap();
 
   var _beaconEvent = new WeakMap();
 
@@ -698,7 +698,7 @@
         value: void 0
       });
 
-      _body.set(this, {
+      _root.set(this, {
         writable: true,
         value: void 0
       });
@@ -728,14 +728,14 @@
       _classPrivateFieldSet(this, _parentThis, parentThis);
 
       if (typeof document !== 'undefined') {
-        _classPrivateFieldSet(this, _body, document.body);
+        _classPrivateFieldSet(this, _root, document);
       }
     }
 
     _createClass(Beacon, [{
       key: "emit",
       value: function emit() {
-        if (_classPrivateFieldGet(this, _body)) {
+        if (_classPrivateFieldGet(this, _root)) {
           var contextMenuClose = new CustomEvent(_classPrivateFieldGet(this, _beaconEvent), {
             cancelable: true,
             bubbles: true,
@@ -744,7 +744,7 @@
             }
           });
 
-          _classPrivateFieldGet(this, _body).dispatchEvent(contextMenuClose);
+          _classPrivateFieldGet(this, _root).dispatchEvent(contextMenuClose);
         }
       }
     }, {
@@ -754,14 +754,14 @@
 
         _classPrivateFieldSet(this, _resolver, resolve);
 
-        (_classPrivateFieldGet2 = _classPrivateFieldGet(this, _body)) === null || _classPrivateFieldGet2 === void 0 ? void 0 : _classPrivateFieldGet2.addEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
+        (_classPrivateFieldGet2 = _classPrivateFieldGet(this, _root)) === null || _classPrivateFieldGet2 === void 0 ? void 0 : _classPrivateFieldGet2.addEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
       }
     }, {
       key: "off",
       value: function off() {
         var _classPrivateFieldGet3;
 
-        (_classPrivateFieldGet3 = _classPrivateFieldGet(this, _body)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.removeEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
+        (_classPrivateFieldGet3 = _classPrivateFieldGet(this, _root)) === null || _classPrivateFieldGet3 === void 0 ? void 0 : _classPrivateFieldGet3.removeEventListener(_classPrivateFieldGet(this, _beaconEvent), _classPrivateFieldGet(this, _beaconListener));
 
         _classPrivateFieldSet(this, _resolver, undefined);
       }
@@ -890,8 +890,8 @@
       this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
       this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu));
 
-      if (this.contextTarget.body) {
-        new Select(this.contextTarget.body).on('click', _classPrivateFieldGet(this, _onClick));
+      if (typeof document !== 'undefined') {
+        new Select(document).on('click', _classPrivateFieldGet(this, _onClick));
       }
 
       _classPrivateFieldGet(this, _beacon).listen(function (shouldClose) {
