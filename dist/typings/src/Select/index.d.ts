@@ -6,12 +6,13 @@ export declare class Select {
     elements: Node[];
     parent: Select | null;
     constructor(selector?: HTMLSelector);
-    getParentSelection(): (Select | null);
+    getParentNode(): (Select | null);
+    getAllParents(): Select[];
     query(selector: string): Select;
     append(nodes: HTMLTypeNodes): Select;
     prepend(nodes: HTMLTypeNodes): Select;
     detach(): Select;
-    clear(): Select;
+    empty(): Select;
     htmlMap(): string[];
     textMap(): string[];
     map(evaluatorFn: (n: Node, i: number) => any): any[];
@@ -28,7 +29,7 @@ export declare class Select {
         [prop: string]: any;
     }): Select;
     getAttrMap(attr: string): string[];
-    repaint(): Select;
+    reflow(): Select;
     contains(nodes: HTMLSelector): boolean;
     static create(nodes: HTMLTypeNodes): Select;
 }

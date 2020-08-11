@@ -52,7 +52,7 @@ export class ContextMenu<T extends HTMLElement> {
                 this.config
                 && typeof this.config.onActivate === 'function'
             ) {
-                this.rootElement.repaint();
+                this.rootElement.reflow();
                 this.config.onActivate(this.rootElement);
             }
         }
@@ -86,8 +86,11 @@ export class ContextMenu<T extends HTMLElement> {
             this.config && this.config.rootElement
                 ? this.config.rootElement
                 : `<ul class="context-menu-list"></ul>`
-        );
+        )
+            .setAttr({ 'data-context-menu-root': true })
+            .on('click', this.#onRootClick);
         this.contextTarget
+            .setAttr({ 'data-context-menu-enabled': true })
             .on('contextmenu', this.#onContextMenu);
         if (typeof document !== 'undefined') {
             new Select(document).on('click', this.#onClick);
@@ -97,7 +100,6 @@ export class ContextMenu<T extends HTMLElement> {
                 this.#onClick();
             }
         });
-        this.rootElement.on('click', this.#onRootClick);
     }
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T> {
         const elements = [...args];
@@ -129,20 +131,20 @@ export class ContextList<T extends HTMLElement, U extends HTMLElement> {
         if (config && typeof config === 'object') {
             this.config = Object.freeze(config);
         }
-        this.rootElement = Select.create(
-            this.config && this.config.rootElement
-                ? this.config.rootElement
-                : `<li class="menu-item"></li>`
-        );
-        this.rootElement.setAttr({
-            'data-has-sub-elements': true
-        });
         this.listElement = Select.create(
             this.config && this.config.listElement
                 ? this.config.listElement
                 : `<ul class="context-submenu"></ul>`
-        );
-        this.rootElement
+        )
+            .setAttr({ 'data-context-submenu-root': true });
+        this.rootElement = Select.create(
+            this.config && this.config.rootElement
+                ? this.config.rootElement
+                : `<li class="menu-item"></li>`
+        )
+            .setAttr({
+                'data-has-sub-elements': true
+            })
             .append(title)
             .append(this.listElement);
     }
@@ -175,7 +177,8 @@ export class ContextItem<T extends HTMLElement> {
             this.config && this.config.rootElement
                 ? this.config.rootElement
                 : `<li class="menu-item"></li>`
-        );
-        this.rootElement.append(title);
+        )
+            .setAttr({ 'data-is-context-menu-leaf': true })
+            .append(title);
     }
 }

@@ -3,6 +3,7 @@ import { ContextMenu, ContextItem } from '../src';
 const menu = new ContextMenu(null, {
     onClick() {
         console.log(this.textMap());
+        console.log(this.getAllParents());
         return true;
     },
     onActivate(rootEl) {

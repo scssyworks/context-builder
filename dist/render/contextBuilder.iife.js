@@ -214,7 +214,7 @@
       } // Resolve parent
 
 
-      this.parent = this.getParentSelection();
+      this.parent = this.getParentNode();
     }
     /**
      * Returns a Select object for parent nodes
@@ -222,8 +222,8 @@
 
 
     _createClass(Select, [{
-      key: "getParentSelection",
-      value: function getParentSelection() {
+      key: "getParentNode",
+      value: function getParentNode() {
         var parentNodeList = this.elements.map(function (el) {
           return el.parentNode;
         }).filter(function (el) {
@@ -235,6 +235,26 @@
         }
 
         return null;
+      }
+      /**
+       * Returns list of all parents
+       */
+
+    }, {
+      key: "getAllParents",
+      value: function getAllParents() {
+        var currRef = new Select(this);
+        var parentsList = [];
+
+        do {
+          currRef = currRef.getParentNode();
+
+          if (currRef) {
+            parentsList.push(currRef);
+          }
+        } while (currRef);
+
+        return parentsList;
       }
       /**
        * Query children of current element
@@ -333,8 +353,8 @@
        */
 
     }, {
-      key: "clear",
-      value: function clear() {
+      key: "empty",
+      value: function empty() {
         if (this.body) {
           this.elements.forEach(function (el) {
             if (el instanceof HTMLElement) {
@@ -533,8 +553,8 @@
        */
 
     }, {
-      key: "repaint",
-      value: function repaint() {
+      key: "reflow",
+      value: function reflow() {
         this.elements.forEach(function (el) {
           if (el instanceof HTMLElement) {
             el.offsetHeight; // Accessing offset height somehow triggers a reflow
@@ -847,7 +867,7 @@
             new CursorPlacement(e, _this.rootElement);
 
             if (_this.config && typeof _this.config.onActivate === 'function') {
-              _this.rootElement.repaint();
+              _this.rootElement.reflow();
 
               _this.config.onActivate(_this.rootElement);
             }
@@ -886,8 +906,12 @@
 
       this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
       this.isSupported = !!this.contextTarget.body;
-      this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>");
-      this.contextTarget.on('contextmenu', _classPrivateFieldGet(this, _onContextMenu));
+      this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>").setAttr({
+        'data-context-menu-root': true
+      }).on('click', _classPrivateFieldGet(this, _onRootClick));
+      this.contextTarget.setAttr({
+        'data-context-menu-enabled': true
+      }).on('contextmenu', _classPrivateFieldGet(this, _onContextMenu));
 
       if (typeof document !== 'undefined') {
         new Select(document).on('click', _classPrivateFieldGet(this, _onClick));
@@ -898,8 +922,6 @@
           _classPrivateFieldGet(_this, _onClick).call(_this);
         }
       });
-
-      this.rootElement.on('click', _classPrivateFieldGet(this, _onRootClick));
     }
 
     _createClass(ContextMenu, [{
@@ -957,12 +979,12 @@
         this.config = Object.freeze(config);
       }
 
-      this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>");
-      this.rootElement.setAttr({
-        'data-has-sub-elements': true
+      this.listElement = Select.create(this.config && this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>").setAttr({
+        'data-context-submenu-root': true
       });
-      this.listElement = Select.create(this.config && this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>");
-      this.rootElement.append(title).append(this.listElement);
+      this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
+        'data-has-sub-elements': true
+      }).append(title).append(this.listElement);
     }
 
     _createClass(ContextList, [{
@@ -1014,13 +1036,15 @@
       this.config = Object.freeze(config);
     }
 
-    this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>");
-    this.rootElement.append(title);
+    this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
+      'data-is-context-menu-leaf': true
+    }).append(title);
   };
 
   var menu = new ContextMenu(null, {
     onClick: function onClick() {
       console.log(this.textMap());
+      console.log(this.getAllParents());
       return true;
     },
     onActivate: function onActivate(rootEl) {

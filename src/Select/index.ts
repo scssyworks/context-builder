@@ -32,17 +32,31 @@ export class Select {
             }
         }
         // Resolve parent
-        this.parent = this.getParentSelection();
+        this.parent = this.getParentNode();
     }
     /**
      * Returns a Select object for parent nodes
      */
-    getParentSelection(): (Select | null) {
+    getParentNode(): (Select | null) {
         const parentNodeList = this.elements.map(el => el.parentNode).filter(el => !!el);
         if (parentNodeList.length) {
             return new Select(parentNodeList as Node[]);
         }
         return null;
+    }
+    /**
+     * Returns list of all parents
+     */
+    getAllParents(): Select[] {
+        let currRef: (Select | null) = new Select(this);
+        const parentsList = [] as Select[];
+        do {
+            currRef = currRef.getParentNode();
+            if (currRef) {
+                parentsList.push(currRef);
+            }
+        } while (currRef);
+        return parentsList;
     }
     /**
      * Query children of current element
@@ -121,7 +135,7 @@ export class Select {
     /**
      * Clears current elements inner HTML
      */
-    clear(): Select {
+    empty(): Select {
         if (this.body) {
             this.elements.forEach(el => {
                 if (el instanceof HTMLElement) {
@@ -274,7 +288,7 @@ export class Select {
     /**
      * Enforce a repaint of targeted elements
      */
-    repaint(): Select {
+    reflow(): Select {
         this.elements.forEach(el => {
             if (el instanceof HTMLElement) {
                 el.offsetHeight; // Accessing offset height somehow triggers a reflow
