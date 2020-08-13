@@ -21,6 +21,7 @@ export interface ContextItemConfig<T extends HTMLElement> {
 export class ContextMenu<T extends HTMLElement> {
     #open = false;
     #active = false;
+    #doc = typeof document !== 'undefined' && (new Select(document));
     #beacon: Beacon<T>;
     #exitFunction = (): void => {
         this.rootElement = this.rootElement.detach().children();
@@ -92,8 +93,8 @@ export class ContextMenu<T extends HTMLElement> {
         this.contextTarget
             .setAttr({ 'data-context-menu-enabled': true })
             .on('contextmenu', this.#onContextMenu);
-        if (typeof document !== 'undefined') {
-            new Select(document).on('click', this.#onClick);
+        if (this.#doc) {
+            this.#doc.on('click', this.#onClick);
         }
         this.#beacon.listen((shouldClose) => {
             if (shouldClose) {
@@ -118,6 +119,9 @@ export class ContextMenu<T extends HTMLElement> {
             .off('contextmenu', this.#onContextMenu)
             .off('click', this.#onClick);
         this.rootElement.off('click', this.#onRootClick);
+        if (this.#doc) {
+            this.#doc.off('click', this.#onClick);
+        }
         this.#beacon.off();
     }
 }

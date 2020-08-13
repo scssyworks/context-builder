@@ -788,6 +788,8 @@ var _open = new WeakMap();
 
 var _active = new WeakMap();
 
+var _doc = new WeakMap();
+
 var _beacon = new WeakMap();
 
 var _exitFunction = new WeakMap();
@@ -812,6 +814,11 @@ var ContextMenu = /*#__PURE__*/function () {
     _active.set(this, {
       writable: true,
       value: false
+    });
+
+    _doc.set(this, {
+      writable: true,
+      value: typeof document !== 'undefined' && new Select(document)
     });
 
     _beacon.set(this, {
@@ -908,8 +915,8 @@ var ContextMenu = /*#__PURE__*/function () {
       'data-context-menu-enabled': true
     }).on('contextmenu', _classPrivateFieldGet(this, _onContextMenu));
 
-    if (typeof document !== 'undefined') {
-      new Select(document).on('click', _classPrivateFieldGet(this, _onClick));
+    if (_classPrivateFieldGet(this, _doc)) {
+      _classPrivateFieldGet(this, _doc).on('click', _classPrivateFieldGet(this, _onClick));
     }
 
     _classPrivateFieldGet(this, _beacon).listen(function (shouldClose) {
@@ -952,6 +959,10 @@ var ContextMenu = /*#__PURE__*/function () {
     value: function cleanup() {
       this.contextTarget.off('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).off('click', _classPrivateFieldGet(this, _onClick));
       this.rootElement.off('click', _classPrivateFieldGet(this, _onRootClick));
+
+      if (_classPrivateFieldGet(this, _doc)) {
+        _classPrivateFieldGet(this, _doc).off('click', _classPrivateFieldGet(this, _onClick));
+      }
 
       _classPrivateFieldGet(this, _beacon).off();
     }
