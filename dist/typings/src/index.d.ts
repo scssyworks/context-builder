@@ -4,6 +4,7 @@ export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     onClick?: (event: U) => boolean | void;
     onActivate?: (elements: Select) => void;
     onDeactivate?: (elements: Select, callback: () => void) => void;
+    onContextMenu?: (event: U) => void;
 }
 export interface ContextListConfig<T extends HTMLElement, U extends HTMLElement> {
     rootElement?: T;

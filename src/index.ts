@@ -7,6 +7,7 @@ export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     onClick?: (event: U) => boolean | void;
     onActivate?: (elements: Select) => void;
     onDeactivate?: (elements: Select, callback: () => void) => void;
+    onContextMenu?: (event: U) => void;
 }
 
 export interface ContextListConfig<T extends HTMLElement, U extends HTMLElement> {
@@ -23,53 +24,6 @@ export class ContextMenu<T extends HTMLElement> {
     #active = false;
     #doc = typeof document !== 'undefined' && (new Select(document));
     #beacon: Beacon<T>;
-    #exitFunction = (): void => {
-        this.rootElement = this.rootElement.detach().children();
-        this.#open = false;
-        this.#active = false;
-    }
-    #onClick = (): void => {
-        if (this.#active) {
-            if (
-                this.config
-                && typeof this.config.onDeactivate === 'function'
-            ) {
-                this.#open = true;
-                this.config.onDeactivate(this.rootElement, this.#exitFunction);
-            } else {
-                this.#exitFunction();
-            }
-        }
-    }
-    #onContextMenu = (e: MouseEvent): void => {
-        e.preventDefault();
-        e.stopPropagation(); // For nested context menus
-        this.#beacon.emit(); // Sends notification to other context menu instances to automatically close
-        this.#active = true;
-        if (!this.#open) {
-            this.contextTarget.append(this.rootElement);
-            new CursorPlacement(e, this.rootElement);
-            if (
-                this.config
-                && typeof this.config.onActivate === 'function'
-            ) {
-                this.rootElement.reflow();
-                this.config.onActivate(this.rootElement);
-            }
-        }
-    }
-    #onRootClick = (e: Event): void => {
-        e.stopPropagation();
-        if (
-            this.config
-            && typeof this.config.onClick === 'function'
-        ) {
-            const shouldExit = this.config.onClick.apply(new Select(e.target), [e]);
-            if (shouldExit) {
-                this.#onClick();
-            }
-        }
-    }
     contextTarget: Select;
     isSupported: boolean;
     rootElement: Select;
@@ -102,6 +56,57 @@ export class ContextMenu<T extends HTMLElement> {
             }
         });
     }
+    // Private functions
+    #exitFunction = (): void => {
+        this.rootElement = this.rootElement.detach().children();
+        this.#open = false;
+        this.#active = false;
+    }
+    #onClick = (): void => {
+        if (this.#active) {
+            if (
+                this.config
+                && typeof this.config.onDeactivate === 'function'
+            ) {
+                this.#open = true;
+                this.config.onDeactivate(this.rootElement, this.#exitFunction);
+            } else {
+                this.#exitFunction();
+            }
+        }
+    }
+    #onContextMenu = (e: MouseEvent): void => {
+        e.preventDefault();
+        e.stopPropagation(); // For nested context menus
+        this.#beacon.emit(); // Sends notification to other context menu instances to automatically close
+        this.#active = true;
+        if (!this.#open) {
+            this.contextTarget.append(this.rootElement);
+            new CursorPlacement(e, this.rootElement);
+            if (this.config) {
+                if (typeof this.config.onActivate === 'function') {
+                    this.rootElement.reflow();
+                    this.config.onActivate.apply(this.rootElement, [this.rootElement]);
+                }
+                if (typeof this.config.onContextMenu === 'function') {
+                    this.config.onContextMenu.apply(this.rootElement, [e]);
+                }
+            }
+        }
+    }
+    #onRootClick = (e: Event): void => {
+        e.stopPropagation();
+        if (
+            this.config
+            && typeof this.config.onClick === 'function'
+        ) {
+            const shouldExit = this.config.onClick.apply(new Select(e.target), [e]);
+            if (shouldExit) {
+                this.#onClick();
+            }
+        }
+    }
+    // Public methods
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T> {
         const elements = [...args];
         for (const element of elements) {
@@ -118,7 +123,7 @@ export class ContextMenu<T extends HTMLElement> {
         this.contextTarget
             .off('contextmenu', this.#onContextMenu)
             .off('click', this.#onClick);
-        this.rootElement.off('click', this.#onRootClick);
+        this.rootElement.off('click', this.#onRootClick).remove();
         if (this.#doc) {
             this.#doc.off('click', this.#onClick);
         }

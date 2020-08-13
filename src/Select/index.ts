@@ -311,6 +311,15 @@ export class Select {
         }).indexOf(false) === -1;
     }
     /**
+     * Removes the current element from DOM entirely
+     */
+    remove(): Select {
+        this.elements.forEach(el => {
+            el.parentNode?.removeChild(el);
+        });
+        return this;
+    }
+    /**
      * Static method to create a new HTML node
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
      */

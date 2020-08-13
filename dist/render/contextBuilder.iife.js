@@ -594,6 +594,20 @@
         }).indexOf(false) === -1;
       }
       /**
+       * Removes the current element from DOM entirely
+       */
+
+    }, {
+      key: "remove",
+      value: function remove() {
+        this.elements.forEach(function (el) {
+          var _el$parentNode;
+
+          (_el$parentNode = el.parentNode) === null || _el$parentNode === void 0 ? void 0 : _el$parentNode.removeChild(el);
+        });
+        return this;
+      }
+      /**
        * Static method to create a new HTML node
        * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
        */
@@ -831,6 +845,14 @@
         value: void 0
       });
 
+      _defineProperty(this, "contextTarget", void 0);
+
+      _defineProperty(this, "isSupported", void 0);
+
+      _defineProperty(this, "rootElement", void 0);
+
+      _defineProperty(this, "config", {});
+
       _exitFunction.set(this, {
         writable: true,
         value: function value() {
@@ -873,10 +895,16 @@
 
             new CursorPlacement(e, _this.rootElement);
 
-            if (_this.config && typeof _this.config.onActivate === 'function') {
-              _this.rootElement.reflow();
+            if (_this.config) {
+              if (typeof _this.config.onActivate === 'function') {
+                _this.rootElement.reflow();
 
-              _this.config.onActivate(_this.rootElement);
+                _this.config.onActivate.apply(_this.rootElement, [_this.rootElement]);
+              }
+
+              if (typeof _this.config.onContextMenu === 'function') {
+                _this.config.onContextMenu.apply(_this.rootElement, [e]);
+              }
             }
           }
         }
@@ -896,14 +924,6 @@
           }
         }
       });
-
-      _defineProperty(this, "contextTarget", void 0);
-
-      _defineProperty(this, "isSupported", void 0);
-
-      _defineProperty(this, "rootElement", void 0);
-
-      _defineProperty(this, "config", {});
 
       _classPrivateFieldSet(this, _beacon, new Beacon(this));
 
@@ -929,10 +949,12 @@
           _classPrivateFieldGet(_this, _onClick).call(_this);
         }
       });
-    }
+    } // Private functions
+
 
     _createClass(ContextMenu, [{
       key: "add",
+      // Public methods
       value: function add() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
@@ -963,7 +985,7 @@
       key: "cleanup",
       value: function cleanup() {
         this.contextTarget.off('contextmenu', _classPrivateFieldGet(this, _onContextMenu)).off('click', _classPrivateFieldGet(this, _onClick));
-        this.rootElement.off('click', _classPrivateFieldGet(this, _onRootClick));
+        this.rootElement.off('click', _classPrivateFieldGet(this, _onRootClick)).remove();
 
         if (_classPrivateFieldGet(this, _doc)) {
           _classPrivateFieldGet(this, _doc).off('click', _classPrivateFieldGet(this, _onClick));
@@ -1074,29 +1096,7 @@
       });
     }
   });
-  var childMenu = new ContextMenu('h2.bg-secondary', {
-    onClick: function onClick() {
-      console.log(this.textMap());
-      return true;
-    },
-    onActivate: function onActivate(rootEl) {
-      rootEl.map(function (el) {
-        if (el instanceof HTMLElement) {
-          el.classList.add('show');
-        }
-      });
-    },
-    onDeactivate: function onDeactivate(rootEl, fn) {
-      rootEl.once('transitionend', fn);
-      rootEl.map(function (el) {
-        if (el instanceof HTMLElement) {
-          el.classList.remove('show');
-        }
-      });
-    }
-  });
   menu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'), new ContextItem('List Item 4'), new ContextItem('List Item 5'), new ContextItem('List Item 6'));
-  childMenu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'));
 
 }());
 //# sourceMappingURL=contextBuilder.iife.js.map

@@ -31,6 +31,7 @@ export declare class Select {
     getAttrMap(attr: string): string[];
     reflow(): Select;
     contains(nodes: HTMLSelector): boolean;
+    remove(): Select;
     static create(nodes: HTMLTypeNodes): Select;
 }
 //# sourceMappingURL=index.d.ts.map
