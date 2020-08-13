@@ -20,7 +20,8 @@ const commonConfig = {
         }),
         babel({
             exclude: 'node_modules/**',
-            extensions: ['.js', '.jsx', '.es6', '.es', '.mjs', '.ts']
+            extensions: ['.js', '.jsx', '.es6', '.es', '.mjs', '.ts'],
+            babelHelpers: 'runtime'
         }),
         commonjs({
             extensions: ['.js', '.ts']

@@ -5,6 +5,7 @@ export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     onActivate?: (elements: Select) => void;
     onDeactivate?: (elements: Select, callback: () => void) => void;
     onContextMenu?: (event: U) => void;
+    onBeforeCleanup?: () => (boolean | Promise<boolean>);
 }
 export interface ContextListConfig<T extends HTMLElement, U extends HTMLElement> {
     rootElement?: T;
@@ -21,7 +22,7 @@ export declare class ContextMenu<T extends HTMLElement> {
     config: ContextMenuConfig<T, Event>;
     constructor(target: string | null, config?: ContextMenuConfig<T, Event>);
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T>;
-    cleanup(): void;
+    cleanup(): Promise<void>;
 }
 export declare class ContextList<T extends HTMLElement, U extends HTMLElement> {
     config: ContextListConfig<T, U>;

@@ -8,6 +8,7 @@ export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     onActivate?: (elements: Select) => void;
     onDeactivate?: (elements: Select, callback: () => void) => void;
     onContextMenu?: (event: U) => void;
+    onBeforeCleanup?: () => (boolean | Promise<boolean>);
 }
 
 export interface ContextListConfig<T extends HTMLElement, U extends HTMLElement> {
@@ -106,6 +107,23 @@ export class ContextMenu<T extends HTMLElement> {
             }
         }
     }
+    #onBeforeCleanup = (cb: () => (boolean | Promise<boolean>)): boolean | Promise<boolean> | void => {
+        if (typeof cb === 'function') {
+            const result = cb();
+            return (typeof result === 'undefined' || result);
+        }
+        return true;
+    }
+    #performCleanup = (): void => {
+        this.contextTarget
+            .off('contextmenu', this.#onContextMenu)
+            .off('click', this.#onClick);
+        this.rootElement.off('click', this.#onRootClick).remove();
+        if (this.#doc) {
+            this.#doc.off('click', this.#onClick);
+        }
+        this.#beacon.off();
+    }
     // Public methods
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T> {
         const elements = [...args];
@@ -119,15 +137,20 @@ export class ContextMenu<T extends HTMLElement> {
         }
         return this;
     }
-    cleanup(): void {
-        this.contextTarget
-            .off('contextmenu', this.#onContextMenu)
-            .off('click', this.#onClick);
-        this.rootElement.off('click', this.#onRootClick).remove();
-        if (this.#doc) {
-            this.#doc.off('click', this.#onClick);
+    async cleanup(): Promise<void> {
+        if (this.config && typeof this.config.onBeforeCleanup === 'function') {
+            const shouldCleanup = this.#onBeforeCleanup(this.config.onBeforeCleanup);
+            if (typeof shouldCleanup === 'boolean' && shouldCleanup) {
+                this.#performCleanup();
+            } else if (typeof (shouldCleanup as any).then === 'function') {
+                const shouldCleanupPromise = await shouldCleanup;
+                if (shouldCleanupPromise) {
+                    this.#performCleanup();
+                }
+            }
+        } else {
+            this.#performCleanup();
         }
-        this.#beacon.off();
     }
 }
 
