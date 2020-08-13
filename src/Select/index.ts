@@ -324,6 +324,9 @@ export class Select {
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
      */
     static create(nodes: HTMLTypeNodes): Select {
+        if (nodes instanceof HTMLTemplateElement) {
+            return new Select(nodes.content).children(); // Content is a fragment itself
+        }
         return (new Select(document.createDocumentFragment()))
             .append(nodes)
             .children();

@@ -1381,6 +1381,10 @@ var Select = /*#__PURE__*/function () {
   }], [{
     key: "create",
     value: function create(nodes) {
+      if (nodes instanceof HTMLTemplateElement) {
+        return new Select(nodes.content).children(); // Content is a fragment itself
+      }
+
       return new Select(document.createDocumentFragment()).append(nodes).children();
     }
   }]);
