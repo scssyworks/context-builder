@@ -63,5 +63,8 @@
   "bugs": {
     "url": "https://github.com/scssyworks/context-builder/issues"
   },
-  "homepage": "https://github.com/scssyworks/context-builder#readme"
+  "homepage": "https://github.com/scssyworks/context-builder#readme",
+  "dependencies": {
+    "is-promise": "^4.0.0"
+  }
 }

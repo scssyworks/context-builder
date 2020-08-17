@@ -1578,11 +1578,155 @@
 	  return Beacon;
 	}();
 
+	var isPromise_1 = isPromise;
+	var _default = isPromise;
+
+	function isPromise(obj) {
+	  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
+	}
+	isPromise_1.default = _default;
+
 	function _createForOfIteratorHelper$1(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$2(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 	function _unsupportedIterableToArray$2(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$2(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$2(o, minLen); }
 
 	function _arrayLikeToArray$2(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+	var _ref = new WeakMap();
+
+	var _handlers = new WeakMap();
+
+	var _existingEvents = new WeakMap();
+
+	var EventManager = /*#__PURE__*/function () {
+	  function EventManager(thisRef) {
+	    var _this = this;
+
+	    classCallCheck(this, EventManager);
+
+	    _ref.set(this, {
+	      writable: true,
+	      value: void 0
+	    });
+
+	    _handlers.set(this, {
+	      writable: true,
+	      value: []
+	    });
+
+	    _existingEvents.set(this, {
+	      writable: true,
+	      value: function value(handler) {
+	        return classPrivateFieldGet(_this, _handlers).filter(function (evtObj) {
+	          return evtObj.handler === handler;
+	        });
+	      }
+	    });
+
+	    classPrivateFieldSet(this, _ref, thisRef);
+	  }
+
+	  createClass(EventManager, [{
+	    key: "on",
+	    value: function on(type, handler) {
+	      var currEvents = classPrivateFieldGet(this, _existingEvents).call(this, handler);
+
+	      var pushEvent = true;
+
+	      var _iterator = _createForOfIteratorHelper$1(currEvents),
+	          _step;
+
+	      try {
+	        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+	          var currEvent = _step.value;
+
+	          if (currEvent.type === type) {
+	            pushEvent = false;
+	            break;
+	          }
+	        }
+	      } catch (err) {
+	        _iterator.e(err);
+	      } finally {
+	        _iterator.f();
+	      }
+
+	      if (pushEvent) {
+	        classPrivateFieldGet(this, _handlers).push({
+	          type: type,
+	          handler: handler
+	        });
+	      }
+	    }
+	  }, {
+	    key: "off",
+	    value: function off(type, handler) {
+	      if (typeof type !== 'string') {
+	        classPrivateFieldGet(this, _handlers).length = 0;
+	      } else {
+	        var offHandlers = [];
+
+	        var _iterator2 = _createForOfIteratorHelper$1(classPrivateFieldGet(this, _handlers)),
+	            _step2;
+
+	        try {
+	          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+	            var currEvent = _step2.value;
+
+	            if (currEvent.type === type && (typeof handler === 'undefined' || currEvent.handler === handler)) {
+	              offHandlers.push(currEvent);
+	            }
+	          }
+	        } catch (err) {
+	          _iterator2.e(err);
+	        } finally {
+	          _iterator2.f();
+	        }
+
+	        for (var _i = 0, _offHandlers = offHandlers; _i < _offHandlers.length; _i++) {
+	          var _handler = _offHandlers[_i];
+
+	          classPrivateFieldGet(this, _handlers).splice(classPrivateFieldGet(this, _handlers).indexOf(_handler), 1);
+	        }
+	      }
+	    }
+	  }, {
+	    key: "emit",
+	    value: function emit(type) {
+	      var _this2 = this;
+
+	      for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+	        args[_key - 1] = arguments[_key];
+	      }
+
+	      var returnedValues = [];
+
+	      classPrivateFieldGet(this, _handlers).forEach(function (currEvent) {
+	        if (currEvent.type === type) {
+	          returnedValues.push(currEvent.handler.apply(classPrivateFieldGet(_this2, _ref), args));
+	        }
+	      });
+
+	      console.log(classPrivateFieldGet(this, _handlers));
+	      return returnedValues;
+	    }
+	  }, {
+	    key: "hasListener",
+	    value: function hasListener(type) {
+	      return Boolean(classPrivateFieldGet(this, _handlers).filter(function (evt) {
+	        return evt.type === type;
+	      }).length);
+	    }
+	  }]);
+
+	  return EventManager;
+	}();
+
+	function _createForOfIteratorHelper$2(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$3(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+	function _unsupportedIterableToArray$3(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$3(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$3(o, minLen); }
+
+	function _arrayLikeToArray$3(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 	var _open = new WeakMap();
 
@@ -1591,6 +1735,8 @@
 	var _doc = new WeakMap();
 
 	var _beacon = new WeakMap();
+
+	var _eventManager = new WeakMap();
 
 	var _exitFunction = new WeakMap();
 
@@ -1630,6 +1776,11 @@
 	      value: void 0
 	    });
 
+	    _eventManager.set(this, {
+	      writable: true,
+	      value: void 0
+	    });
+
 	    defineProperty(this, "contextTarget", void 0);
 
 	    defineProperty(this, "isSupported", void 0);
@@ -1641,11 +1792,19 @@
 	    _exitFunction.set(this, {
 	      writable: true,
 	      value: function value() {
+	        var _classPrivateFieldGet2;
+
 	        _this.rootElement = _this.rootElement.detach().children();
 
 	        classPrivateFieldSet(_this, _open, false);
 
 	        classPrivateFieldSet(_this, _active, false);
+
+	        for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
+	          args[_key] = arguments[_key];
+	        }
+
+	        (_classPrivateFieldGet2 = classPrivateFieldGet(_this, _eventManager)).emit.apply(_classPrivateFieldGet2, ['closed'].concat(args));
 	      }
 	    });
 
@@ -1653,10 +1812,12 @@
 	      writable: true,
 	      value: function value() {
 	        if (classPrivateFieldGet(_this, _active)) {
-	          if (_this.config && typeof _this.config.onDeactivate === 'function') {
+	          if (typeof _this.config.onDeactivate === 'function') {
 	            classPrivateFieldSet(_this, _open, true);
 
 	            _this.config.onDeactivate(_this.rootElement, classPrivateFieldGet(_this, _exitFunction));
+	          } else if (classPrivateFieldGet(_this, _eventManager).hasListener('deactivate')) {
+	            classPrivateFieldGet(_this, _eventManager).emit('deactivate', _this.rootElement, classPrivateFieldGet(_this, _exitFunction));
 	          } else {
 	            classPrivateFieldGet(_this, _exitFunction).call(_this);
 	          }
@@ -1680,17 +1841,19 @@
 
 	          new CursorPlacement(e, _this.rootElement);
 
-	          if (_this.config) {
-	            if (typeof _this.config.onActivate === 'function') {
-	              _this.rootElement.reflow();
+	          if (typeof _this.config.onActivate === 'function') {
+	            _this.rootElement.reflow();
 
-	              _this.config.onActivate.apply(_this.rootElement, [_this.rootElement]);
-	            }
-
-	            if (typeof _this.config.onContextMenu === 'function') {
-	              _this.config.onContextMenu.apply(_this.rootElement, [e]);
-	            }
+	            _this.config.onActivate.apply(_this.rootElement, [_this.rootElement]);
 	          }
+
+	          if (typeof _this.config.onContextMenu === 'function') {
+	            _this.config.onContextMenu.apply(_this.rootElement, [e]);
+	          }
+
+	          classPrivateFieldGet(_this, _eventManager).emit('activate', _this.rootElement);
+
+	          classPrivateFieldGet(_this, _eventManager).emit('contextmenu', e);
 	        }
 	      }
 	    });
@@ -1700,12 +1863,20 @@
 	      value: function value(e) {
 	        e.stopPropagation();
 
-	        if (_this.config && typeof _this.config.onClick === 'function') {
+	        if (typeof _this.config.onClick === 'function') {
 	          var shouldExit = _this.config.onClick.apply(new Select(e.target), [e]);
 
 	          if (shouldExit) {
 	            classPrivateFieldGet(_this, _onClick).call(_this);
 	          }
+	        } else if (classPrivateFieldGet(_this, _eventManager).hasListener('click')) {
+	          var returnedValues = classPrivateFieldGet(_this, _eventManager).emit('click', e, new Select(e.target));
+
+	          returnedValues.forEach(function (shouldExit) {
+	            if (typeof shouldExit === 'boolean' && shouldExit) {
+	              classPrivateFieldGet(_this, _onClick).call(_this);
+	            }
+	          });
 	        }
 	      }
 	    });
@@ -1734,18 +1905,19 @@
 	        }
 
 	        classPrivateFieldGet(_this, _beacon).off();
+
+	        classPrivateFieldGet(_this, _eventManager).emit('cleaned');
+
+	        classPrivateFieldGet(_this, _eventManager).off();
 	      }
 	    });
 
 	    classPrivateFieldSet(this, _beacon, new Beacon(this));
 
-	    if (config && _typeof_1(config) === 'object') {
-	      this.config = Object.freeze(config);
-	    }
-
+	    this.config = Object.freeze(_typeof_1(config) === 'object' && config || {});
 	    this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
 	    this.isSupported = !!this.contextTarget.body;
-	    this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>").setAttr({
+	    this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>").setAttr({
 	      'data-context-menu-root': true
 	    }).on('click', classPrivateFieldGet(this, _onRootClick));
 	    this.contextTarget.setAttr({
@@ -1761,6 +1933,8 @@
 	        classPrivateFieldGet(_this, _onClick).call(_this);
 	      }
 	    });
+
+	    classPrivateFieldSet(this, _eventManager, new EventManager(this.rootElement));
 	  } // Private functions
 
 
@@ -1768,13 +1942,13 @@
 	    key: "add",
 	    // Public methods
 	    value: function add() {
-	      for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
-	        args[_key] = arguments[_key];
+	      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+	        args[_key2] = arguments[_key2];
 	      }
 
 	      var elements = [].concat(args);
 
-	      var _iterator = _createForOfIteratorHelper$1(elements),
+	      var _iterator = _createForOfIteratorHelper$2(elements),
 	          _step;
 
 	      try {
@@ -1802,52 +1976,64 @@
 	          while (1) {
 	            switch (_context.prev = _context.next) {
 	              case 0:
-	                if (!(this.config && typeof this.config.onBeforeCleanup === 'function')) {
-	                  _context.next = 13;
+	                classPrivateFieldGet(this, _eventManager).emit('beforecleanup');
+
+	                if (!(typeof this.config.onBeforeCleanup === 'function')) {
+	                  _context.next = 20;
 	                  break;
 	                }
 
 	                shouldCleanup = classPrivateFieldGet(this, _onBeforeCleanup).call(this, this.config.onBeforeCleanup);
 
 	                if (!(typeof shouldCleanup === 'boolean' && shouldCleanup)) {
-	                  _context.next = 6;
+	                  _context.next = 7;
 	                  break;
 	                }
 
 	                classPrivateFieldGet(this, _performCleanup).call(this);
 
-	                _context.next = 11;
+	                _context.next = 18;
 	                break;
 
-	              case 6:
-	                if (!(typeof shouldCleanup.then === 'function')) {
-	                  _context.next = 11;
+	              case 7:
+	                if (!isPromise_1(shouldCleanup)) {
+	                  _context.next = 18;
 	                  break;
 	                }
 
-	                _context.next = 9;
+	                _context.prev = 8;
+	                _context.next = 11;
 	                return shouldCleanup;
 
-	              case 9:
+	              case 11:
 	                shouldCleanupPromise = _context.sent;
 
 	                if (shouldCleanupPromise) {
 	                  classPrivateFieldGet(this, _performCleanup).call(this);
 	                }
 
-	              case 11:
-	                _context.next = 14;
+	                _context.next = 18;
 	                break;
 
-	              case 13:
+	              case 15:
+	                _context.prev = 15;
+	                _context.t0 = _context["catch"](8);
+	                // eslint-disable-next-line no-console
+	                console.error(_context.t0);
+
+	              case 18:
+	                _context.next = 21;
+	                break;
+
+	              case 20:
 	                classPrivateFieldGet(this, _performCleanup).call(this);
 
-	              case 14:
+	              case 21:
 	              case "end":
 	                return _context.stop();
 	            }
 	          }
-	        }, _callee, this);
+	        }, _callee, this, [[8, 15]]);
 	      }));
 
 	      function cleanup() {
@@ -1856,6 +2042,20 @@
 
 	      return cleanup;
 	    }()
+	  }, {
+	    key: "on",
+	    value: function on(event, handler) {
+	      classPrivateFieldGet(this, _eventManager).on(event, handler);
+
+	      return this;
+	    }
+	  }, {
+	    key: "off",
+	    value: function off(event, handler) {
+	      classPrivateFieldGet(this, _eventManager).off(event, handler);
+
+	      return this;
+	    }
 	  }]);
 
 	  return ContextMenu;
@@ -1871,14 +2071,11 @@
 
 	    defineProperty(this, "listElement", void 0);
 
-	    if (config && _typeof_1(config) === 'object') {
-	      this.config = Object.freeze(config);
-	    }
-
-	    this.listElement = Select.create(this.config && this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>").setAttr({
+	    this.config = Object.freeze(_typeof_1(config) === 'object' && config || {});
+	    this.listElement = Select.create(this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>").setAttr({
 	      'data-context-submenu-root': true
 	    });
-	    this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
+	    this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
 	      'data-has-sub-elements': true
 	    }).append(title).append(this.listElement);
 	  }
@@ -1886,13 +2083,13 @@
 	  createClass(ContextList, [{
 	    key: "add",
 	    value: function add() {
-	      for (var _len2 = arguments.length, args = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
-	        args[_key2] = arguments[_key2];
+	      for (var _len3 = arguments.length, args = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+	        args[_key3] = arguments[_key3];
 	      }
 
 	      var elements = [].concat(args);
 
-	      var _iterator2 = _createForOfIteratorHelper$1(elements),
+	      var _iterator2 = _createForOfIteratorHelper$2(elements),
 	          _step2;
 
 	      try {
@@ -1912,6 +2109,11 @@
 	      return this;
 	    }
 	  }, {
+	    key: "remove",
+	    value: function remove() {
+	      this.rootElement.remove();
+	    }
+	  }, {
 	    key: "parent",
 	    get: function get() {
 	      return this.rootElement.parent;
@@ -1921,43 +2123,43 @@
 	  return ContextList;
 	}(); // Generates a context item
 
-	var ContextItem = function ContextItem(title, config) {
-	  classCallCheck(this, ContextItem);
+	var ContextItem = /*#__PURE__*/function () {
+	  function ContextItem(title, config) {
+	    classCallCheck(this, ContextItem);
 
-	  defineProperty(this, "config", {});
+	    defineProperty(this, "config", {});
 
-	  defineProperty(this, "rootElement", void 0);
+	    defineProperty(this, "rootElement", void 0);
 
-	  if (config && _typeof_1(config) === 'object') {
-	    this.config = Object.freeze(config);
+	    this.config = Object.freeze(_typeof_1(config) === 'object' && config || {});
+	    this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
+	      'data-is-context-menu-leaf': true
+	    }).append(title);
 	  }
 
-	  this.rootElement = Select.create(this.config && this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
-	    'data-is-context-menu-leaf': true
-	  }).append(title);
-	};
+	  createClass(ContextItem, [{
+	    key: "remove",
+	    value: function remove() {
+	      this.rootElement.remove();
+	    }
+	  }]);
 
-	var menu = new ContextMenu(null, {
-	  onClick: function onClick() {
-	    console.log(this.textMap());
-	    console.log(this.getAllParents());
-	    return true;
-	  },
-	  onActivate: function onActivate(rootEl) {
-	    rootEl.map(function (el) {
-	      if (el instanceof HTMLElement) {
-	        el.classList.add('show');
-	      }
-	    });
-	  },
-	  onDeactivate: function onDeactivate(rootEl, fn) {
-	    rootEl.once('transitionend', fn);
-	    rootEl.map(function (el) {
-	      if (el instanceof HTMLElement) {
-	        el.classList.remove('show');
-	      }
-	    });
-	  }
+	  return ContextItem;
+	}();
+
+	var menu = new ContextMenu().on('activate', function (rootEl) {
+	  rootEl.map(function (el) {
+	    if (el instanceof HTMLElement) {
+	      el.classList.add('show');
+	    }
+	  });
+	}).on('deactivate', function (rootEl, fn) {
+	  rootEl.once('transitionend', fn);
+	  rootEl.map(function (el) {
+	    if (el instanceof HTMLElement) {
+	      el.classList.remove('show');
+	    }
+	  });
 	});
 	menu.add(new ContextItem('List Item 1'), new ContextItem('List Item 2'), new ContextItem('List Item 3'), new ContextItem('List Item 4'), new ContextItem('List Item 5'), new ContextItem('List Item 6'));
 

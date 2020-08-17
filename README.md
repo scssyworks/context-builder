@@ -89,6 +89,21 @@ const contextMenu = new ContextMenu('div', {
 // ...
 ```
 
+## Listen to "contextmenu" event
+
+You can listen to original contextmenu event if you want to capture text selection or do more stuff.
+
+```js
+import { ContextMenu, ContextItem, ContextList } from '@scssyworks/context-builder';
+
+const contextMenu = new ContextMenu('div', {
+    onContextMenu(event) {
+        console.log(event);
+    }
+});
+// ...
+```
+
 ## Destroy context menu
 
 ```js

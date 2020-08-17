@@ -1,27 +1,21 @@
 import { ContextMenu, ContextItem } from '../src';
 
-const menu = new ContextMenu(null, {
-    onClick() {
-        console.log(this.textMap());
-        console.log(this.getAllParents());
-        return true;
-    },
-    onActivate(rootEl) {
+const menu = new ContextMenu()
+    .on('activate', (rootEl) => {
         rootEl.map(el => {
             if (el instanceof HTMLElement) {
                 el.classList.add('show')
             }
         });
-    },
-    onDeactivate(rootEl, fn) {
+    })
+    .on('deactivate', (rootEl, fn) => {
         rootEl.once('transitionend', fn);
         rootEl.map(el => {
             if (el instanceof HTMLElement) {
                 el.classList.remove('show');
             }
         });
-    }
-});
+    });
 
 menu.add(
     new ContextItem('List Item 1'),
