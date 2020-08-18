@@ -1,8 +1,9 @@
 import { ContextMenu } from "..";
 
-if (typeof window !== 'undefined') {
+if (typeof document !== 'undefined') {
+    const win = document.defaultView as any;
     // Polyfill custom event
-    if (typeof window.CustomEvent === 'undefined') {
+    if (typeof win.CustomEvent === 'undefined') {
         class CustomEvent<T> {
             constructor(event: string, params?: CustomEventInit<T>) {
                 params = params || { bubbles: false, cancelable: false, detail: undefined };
@@ -11,8 +12,8 @@ if (typeof window !== 'undefined') {
                 return evt;
             }
         }
-        CustomEvent.prototype = window.Event.prototype;
-        window.CustomEvent = CustomEvent as any;
+        CustomEvent.prototype = win.Event.prototype;
+        win.CustomEvent = CustomEvent as any;
     }
 }
 

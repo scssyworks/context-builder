@@ -1408,11 +1408,15 @@
 
 	    defineProperty(this, "windowProps", void 0);
 
+	    var win = typeof document !== 'undefined' && document.defaultView || {
+	      innerWidth: 0,
+	      innerHeight: 0
+	    };
 	    this.target = new Select(element);
 	    this.targetPlacement = this.target.bounds()[0];
 	    this.windowProps = {
-	      width: window.innerWidth,
-	      height: window.innerHeight
+	      width: win.innerWidth,
+	      height: win.innerHeight
 	    };
 	    this.target.setCSSProps({
 	      position: 'fixed',
@@ -1465,9 +1469,10 @@
 	  return CursorPlacement;
 	}();
 
-	if (typeof window !== 'undefined') {
-	  // Polyfill custom event
-	  if (typeof window.CustomEvent === 'undefined') {
+	if (typeof document !== 'undefined') {
+	  var win = document.defaultView; // Polyfill custom event
+
+	  if (typeof win.CustomEvent === 'undefined') {
 	    var _CustomEvent = function _CustomEvent(event, params) {
 	      classCallCheck(this, _CustomEvent);
 
@@ -1481,8 +1486,8 @@
 	      return evt;
 	    };
 
-	    _CustomEvent.prototype = window.Event.prototype;
-	    window.CustomEvent = _CustomEvent;
+	    _CustomEvent.prototype = win.Event.prototype;
+	    win.CustomEvent = _CustomEvent;
 	  }
 	}
 
