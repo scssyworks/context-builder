@@ -2,7 +2,7 @@ import { Selector, TypeNodes } from "../types";
 export declare type HTMLSelector = Select | Selector;
 export declare type HTMLTypeNodes = Select | TypeNodes;
 export declare class Select {
-    body: boolean | HTMLBodyElement;
+    #private;
     elements: Node[];
     parent: Select | null;
     constructor(selector?: HTMLSelector);
@@ -26,7 +26,7 @@ export declare class Select {
         [prop: string]: any;
     }): Select;
     setAttr(obj: {
-        [prop: string]: any;
+        [prop: string]: string | number | boolean | null | undefined;
     }): Select;
     getAttrMap(attr: string): string[];
     reflow(): Select;

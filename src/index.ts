@@ -28,6 +28,7 @@ export class ContextMenu<T extends HTMLElement> {
     #doc = typeof document !== 'undefined' && (new Select(document));
     #beacon: Beacon<T>;
     #eventManager: EventManager<Event>;
+    #body: Select;
     contextTarget: Select;
     isSupported: boolean;
     rootElement: Select;
@@ -35,10 +36,11 @@ export class ContextMenu<T extends HTMLElement> {
     constructor(target?: string | null, config?: ContextMenuConfig<T, Event>) {
         this.#beacon = new Beacon(this);
         this.config = Object.freeze((typeof config === 'object' && config) || {});
+        this.#body = new Select().getBodyTag();
         this.contextTarget = typeof target === 'string'
             ? new Select(target)
-            : new Select().getBodyTag();
-        this.isSupported = !!this.contextTarget.body;
+            : this.#body;
+        this.isSupported = Boolean(this.contextTarget.elements.length);
         this.rootElement = Select.create(
             this.config.rootElement
                 ? this.config.rootElement
@@ -84,7 +86,7 @@ export class ContextMenu<T extends HTMLElement> {
         this.#beacon.emit(); // Sends notification to other context menu instances to automatically close
         this.#active = true;
         if (!this.#open) {
-            this.contextTarget.append(this.rootElement);
+            this.#body.append(this.rootElement);
             new CursorPlacement(e, this.rootElement);
             if (typeof this.config.onActivate === 'function') {
                 this.rootElement.reflow();

@@ -78,7 +78,6 @@ export class EventManager<U extends Event> {
                 returnedValues.push((currEvent.handler as any).apply(this.#ref, args));
             }
         });
-        console.log(this.#handlers);
         return returnedValues;
     }
     hasListener<K extends keyof ContextMenuEventMap<U>>(type: K): boolean {

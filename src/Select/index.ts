@@ -4,15 +4,15 @@ export type HTMLSelector = Select | Selector;
 export type HTMLTypeNodes = Select | TypeNodes;
 
 export class Select {
-    body: boolean | HTMLBodyElement;
+    #body: boolean | HTMLBodyElement;
     elements: Node[];
     parent: Select | null;
     constructor(selector?: HTMLSelector) {
         // Check if document and document.body exist
-        this.body = typeof document !== 'undefined' && !!document && (document.body as HTMLBodyElement);
+        this.#body = typeof document !== 'undefined' && !!document && (document.body as HTMLBodyElement);
         // Resolve references
         this.elements = [];
-        if (this.body && selector) {
+        if (this.#body && selector) {
             if (typeof selector === 'string') {
                 this.elements = [...document.querySelectorAll(selector)] as Node[];
             } else if (selector instanceof Node || selector instanceof EventTarget) {
@@ -81,7 +81,7 @@ export class Select {
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes 
      */
     append(nodes: HTMLTypeNodes): Select {
-        if (this.body) {
+        if (this.#body) {
             let consumableNodes: Select;
             if (typeof nodes === 'string') {
                 // Expecting a plain HTML string
@@ -111,7 +111,7 @@ export class Select {
      * @param {string | Node | NodeList | HTMLCollection | Node[] | Select} nodes
      */
     prepend(nodes: HTMLTypeNodes): Select {
-        if (this.body) {
+        if (this.#body) {
             this.elements.forEach(target => {
                 const currentFragment = (new Select(target.childNodes)).detach();
                 (new Select(target)).append(nodes).append(currentFragment);
@@ -123,7 +123,7 @@ export class Select {
      * Removes current set of elements from DOM and return DocumentFragment as a Select instance
      */
     detach(): Select {
-        if (this.body) {
+        if (this.#body) {
             const fragment = document.createDocumentFragment();
             this.elements.forEach(el => {
                 fragment.appendChild(el);
@@ -136,7 +136,7 @@ export class Select {
      * Clears current elements inner HTML
      */
     empty(): Select {
-        if (this.body) {
+        if (this.#body) {
             this.elements.forEach(el => {
                 if (el instanceof HTMLElement) {
                     el.innerHTML = '';
@@ -172,7 +172,7 @@ export class Select {
      * @param {Function} evaluatorFn Evaluator function
      */
     map(evaluatorFn: (n: Node, i: number) => any): any[] {
-        if (!this.body || typeof evaluatorFn !== 'function') {
+        if (!this.#body || typeof evaluatorFn !== 'function') {
             return this.elements;
         }
         return this.elements.map(evaluatorFn);
@@ -181,7 +181,7 @@ export class Select {
      * Returns current body tag as a Select instance
      */
     getBodyTag(): Select {
-        return new Select(this.body as HTMLBodyElement);
+        return new Select(this.#body as HTMLBodyElement);
     }
     /**
      * Returns current Select reference children
@@ -263,11 +263,11 @@ export class Select {
      * Sets HTML element attributes
      * @param {object} obj HTML element attributes
      */
-    setAttr(obj: { [prop: string]: any }): Select {
+    setAttr(obj: { [prop: string]: string | number | boolean | null | undefined }): Select {
         this.elements.forEach(el => {
             if (el instanceof HTMLElement) {
                 Object.keys(obj).forEach(attr => {
-                    el.setAttribute(attr, obj[attr]);
+                    el.setAttribute(attr, `${obj[attr]}`);
                 });
             }
         });

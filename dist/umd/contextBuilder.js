@@ -952,22 +952,28 @@
 
 	function _arrayLikeToArray$1(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
+	var _body = new WeakMap();
+
 	var Select = /*#__PURE__*/function () {
 	  function Select(selector) {
 	    classCallCheck(this, Select);
 
-	    defineProperty(this, "body", void 0);
+	    _body.set(this, {
+	      writable: true,
+	      value: void 0
+	    });
 
 	    defineProperty(this, "elements", void 0);
 
 	    defineProperty(this, "parent", void 0);
 
 	    // Check if document and document.body exist
-	    this.body = typeof document !== 'undefined' && !!document && document.body; // Resolve references
+	    classPrivateFieldSet(this, _body, typeof document !== 'undefined' && !!document && document.body); // Resolve references
+
 
 	    this.elements = [];
 
-	    if (this.body && selector) {
+	    if (classPrivateFieldGet(this, _body) && selector) {
 	      if (typeof selector === 'string') {
 	        this.elements = toConsumableArray(document.querySelectorAll(selector));
 	      } else if (selector instanceof Node || selector instanceof EventTarget) {
@@ -1058,7 +1064,7 @@
 	  }, {
 	    key: "append",
 	    value: function append(nodes) {
-	      if (this.body) {
+	      if (classPrivateFieldGet(this, _body)) {
 	        var consumableNodes;
 
 	        if (typeof nodes === 'string') {
@@ -1094,7 +1100,7 @@
 	  }, {
 	    key: "prepend",
 	    value: function prepend(nodes) {
-	      if (this.body) {
+	      if (classPrivateFieldGet(this, _body)) {
 	        this.elements.forEach(function (target) {
 	          var currentFragment = new Select(target.childNodes).detach();
 	          new Select(target).append(nodes).append(currentFragment);
@@ -1110,7 +1116,7 @@
 	  }, {
 	    key: "detach",
 	    value: function detach() {
-	      if (this.body) {
+	      if (classPrivateFieldGet(this, _body)) {
 	        var fragment = document.createDocumentFragment();
 	        this.elements.forEach(function (el) {
 	          fragment.appendChild(el);
@@ -1127,7 +1133,7 @@
 	  }, {
 	    key: "empty",
 	    value: function empty() {
-	      if (this.body) {
+	      if (classPrivateFieldGet(this, _body)) {
 	        this.elements.forEach(function (el) {
 	          if (el instanceof HTMLElement) {
 	            el.innerHTML = '';
@@ -1175,7 +1181,7 @@
 	  }, {
 	    key: "map",
 	    value: function map(evaluatorFn) {
-	      if (!this.body || typeof evaluatorFn !== 'function') {
+	      if (!classPrivateFieldGet(this, _body) || typeof evaluatorFn !== 'function') {
 	        return this.elements;
 	      }
 
@@ -1188,7 +1194,7 @@
 	  }, {
 	    key: "getBodyTag",
 	    value: function getBodyTag() {
-	      return new Select(this.body);
+	      return new Select(classPrivateFieldGet(this, _body));
 	    }
 	    /**
 	     * Returns current Select reference children
@@ -1298,7 +1304,7 @@
 	      this.elements.forEach(function (el) {
 	        if (el instanceof HTMLElement) {
 	          Object.keys(obj).forEach(function (attr) {
-	            el.setAttribute(attr, obj[attr]);
+	            el.setAttribute(attr, "".concat(obj[attr]));
 	          });
 	        }
 	      });
@@ -1713,7 +1719,6 @@
 	        }
 	      });
 
-	      console.log(classPrivateFieldGet(this, _handlers));
 	      return returnedValues;
 	    }
 	  }, {
@@ -1743,6 +1748,8 @@
 	var _beacon = new WeakMap();
 
 	var _eventManager = new WeakMap();
+
+	var _body$1 = new WeakMap();
 
 	var _exitFunction = new WeakMap();
 
@@ -1783,6 +1790,11 @@
 	    });
 
 	    _eventManager.set(this, {
+	      writable: true,
+	      value: void 0
+	    });
+
+	    _body$1.set(this, {
 	      writable: true,
 	      value: void 0
 	    });
@@ -1843,7 +1855,7 @@
 	        classPrivateFieldSet(_this, _active, true);
 
 	        if (!classPrivateFieldGet(_this, _open)) {
-	          _this.contextTarget.append(_this.rootElement);
+	          classPrivateFieldGet(_this, _body$1).append(_this.rootElement);
 
 	          new CursorPlacement(e, _this.rootElement);
 
@@ -1921,8 +1933,11 @@
 	    classPrivateFieldSet(this, _beacon, new Beacon(this));
 
 	    this.config = Object.freeze(_typeof_1(config) === 'object' && config || {});
-	    this.contextTarget = typeof target === 'string' ? new Select(target) : new Select().getBodyTag();
-	    this.isSupported = !!this.contextTarget.body;
+
+	    classPrivateFieldSet(this, _body$1, new Select().getBodyTag());
+
+	    this.contextTarget = typeof target === 'string' ? new Select(target) : classPrivateFieldGet(this, _body$1);
+	    this.isSupported = Boolean(this.contextTarget.elements.length);
 	    this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>").setAttr({
 	      'data-context-menu-root': true
 	    }).on('click', classPrivateFieldGet(this, _onRootClick));
