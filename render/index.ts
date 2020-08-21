@@ -2,6 +2,7 @@ import { ContextMenu, ContextItem } from '../src';
 
 const menu = new ContextMenu()
     .on('activate', (rootEl) => {
+        console.log(rootEl.getAllParents());
         rootEl.map(el => {
             if (el instanceof HTMLElement) {
                 el.classList.add('show')

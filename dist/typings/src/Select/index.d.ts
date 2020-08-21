@@ -7,7 +7,7 @@ export declare class Select {
     parent: Select | null;
     constructor(selector?: HTMLSelector);
     getParentNode(): (Select | null);
-    getAllParents(): Select[];
+    getAllParents(): Select;
     query(selector: string): Select;
     append(nodes: HTMLTypeNodes): Select;
     prepend(nodes: HTMLTypeNodes): Select;
@@ -16,6 +16,8 @@ export declare class Select {
     htmlMap(): string[];
     textMap(): string[];
     map(evaluatorFn: (n: Node, i: number) => any): any[];
+    filter(evaluatorFn: (n: Node, i: number) => boolean): Select;
+    add(selection: Select): Select;
     getBodyTag(): Select;
     children(): Select;
     on<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select;
@@ -27,7 +29,7 @@ export declare class Select {
     }): Select;
     setAttr(obj: {
         [prop: string]: string | number | boolean | null | undefined;
-    }): Select;
+    }, polite?: boolean): Select;
     getAttrMap(attr: string): string[];
     reflow(): Select;
     contains(nodes: HTMLSelector): boolean;

@@ -1,5 +1,5 @@
 import { Select } from "./Select";
-import { ContextMenuEventMap } from "./EventManager";
+import { ContextMenuEventMap } from "./EventEmitter";
 export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     rootElement?: T;
     onClick?: (event: U) => boolean | void;

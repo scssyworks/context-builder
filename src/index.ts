@@ -2,7 +2,7 @@ import { Select } from "./Select";
 import { CursorPlacement } from "./CursorPlacement";
 import { Beacon } from "./Beacon";
 import isPromise from 'is-promise';
-import { EventManager, ContextMenuEventMap } from "./EventManager";
+import { EventEmitter, ContextMenuEventMap } from "./EventEmitter";
 
 export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     rootElement?: T;
@@ -27,7 +27,7 @@ export class ContextMenu<T extends HTMLElement> {
     #active = false;
     #doc = typeof document !== 'undefined' && (new Select(document));
     #beacon: Beacon<T>;
-    #eventManager: EventManager<Event>;
+    #eventManager: EventEmitter<Event>;
     #body: Select;
     contextTarget: Select;
     isSupported: boolean;
@@ -40,16 +40,20 @@ export class ContextMenu<T extends HTMLElement> {
         this.contextTarget = typeof target === 'string'
             ? new Select(target)
             : this.#body;
+        this.contextTarget.setAttr({
+            'aria-haspopup': true,
+            'aria-expanded': false
+        }, true);
         this.isSupported = Boolean(this.contextTarget.elements.length);
         this.rootElement = Select.create(
             this.config.rootElement
                 ? this.config.rootElement
                 : `<ul class="context-menu-list"></ul>`
         )
-            .setAttr({ 'data-context-menu-root': true })
+            .setAttr({ 'data-cm-root': true })
             .on('click', this.#onRootClick);
         this.contextTarget
-            .setAttr({ 'data-context-menu-enabled': true })
+            .setAttr({ 'data-cm-host': true })
             .on('contextmenu', this.#onContextMenu);
         if (this.#doc) {
             this.#doc.on('click', this.#onClick);
@@ -59,13 +63,16 @@ export class ContextMenu<T extends HTMLElement> {
                 this.#onClick();
             }
         });
-        this.#eventManager = new EventManager<Event>(this.rootElement);
+        this.#eventManager = new EventEmitter<Event>(this.rootElement);
     }
     // Private functions
     #exitFunction = (...args: any[]): void => {
         this.rootElement = this.rootElement.detach().children();
         this.#open = false;
         this.#active = false;
+        this.contextTarget.setAttr({
+            'aria-expanded': false
+        }, true);
         this.#eventManager.emit('closed', ...args);
     }
     #onClick = (): void => {
@@ -80,12 +87,21 @@ export class ContextMenu<T extends HTMLElement> {
             }
         }
     }
+    #getReferenceTarget = (target: EventTarget | null): Select => {
+        const currentTarget = new Select(target);
+        return currentTarget.getAllParents().add(currentTarget).filter((el) => {
+            return el instanceof HTMLElement && el.hasAttribute('data-cm-host');
+        });
+    }
     #onContextMenu = (e: MouseEvent): void => {
         e.preventDefault();
         e.stopPropagation(); // For nested context menus
         this.#beacon.emit(); // Sends notification to other context menu instances to automatically close
         this.#active = true;
         if (!this.#open) {
+            this.#getReferenceTarget(e.target).setAttr({
+                'aria-expanded': true
+            }, true);
             this.#body.append(this.rootElement);
             new CursorPlacement(e, this.rootElement);
             if (typeof this.config.onActivate === 'function') {
@@ -190,14 +206,14 @@ export class ContextList<T extends HTMLElement, U extends HTMLElement> {
                 ? this.config.listElement
                 : `<ul class="context-submenu"></ul>`
         )
-            .setAttr({ 'data-context-submenu-root': true });
+            .setAttr({ 'data-cm-submenu-root': true });
         this.rootElement = Select.create(
             this.config.rootElement
                 ? this.config.rootElement
                 : `<li class="menu-item"></li>`
         )
             .setAttr({
-                'data-has-sub-elements': true
+                'data-sub-elements': true
             })
             .append(title)
             .append(this.listElement);
@@ -233,7 +249,7 @@ export class ContextItem<T extends HTMLElement> {
                 ? this.config.rootElement
                 : `<li class="menu-item"></li>`
         )
-            .setAttr({ 'data-is-context-menu-leaf': true })
+            .setAttr({ 'data-cm-leaf': true })
             .append(title);
     }
     remove(): void {

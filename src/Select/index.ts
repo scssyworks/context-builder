@@ -47,13 +47,13 @@ export class Select {
     /**
      * Returns list of all parents
      */
-    getAllParents(): Select[] {
+    getAllParents(): Select {
         let currRef: (Select | null) = new Select(this);
-        const parentsList = [] as Select[];
+        const parentsList = new Select();
         do {
             currRef = currRef.getParentNode();
             if (currRef) {
-                parentsList.push(currRef);
+                parentsList.add(currRef);
             }
         } while (currRef);
         return parentsList;
@@ -178,6 +178,27 @@ export class Select {
         return this.elements.map(evaluatorFn);
     }
     /**
+     * Filter elements based on returned condition
+     * @param {Function} evaluatorFn Evaluator function
+     */
+    filter(evaluatorFn: (n: Node, i: number) => boolean): Select {
+        const matched = [] as Node[];
+        this.map((el, i) => {
+            if (evaluatorFn(el, i)) {
+                matched.push(el);
+            }
+        });
+        return new Select(matched);
+    }
+    /**
+     * Merges passed selection to current object
+     * @param {Select} selection input selection
+     */
+    add(selection: Select): Select {
+        this.elements.push(...selection.elements);
+        return this;
+    }
+    /**
      * Returns current body tag as a Select instance
      */
     getBodyTag(): Select {
@@ -262,12 +283,18 @@ export class Select {
     /**
      * Sets HTML element attributes
      * @param {object} obj HTML element attributes
+     * @param {boolean} polite Flag to set attributes politely
      */
-    setAttr(obj: { [prop: string]: string | number | boolean | null | undefined }): Select {
+    setAttr(obj: { [prop: string]: string | number | boolean | null | undefined }, polite = false): Select {
         this.elements.forEach(el => {
             if (el instanceof HTMLElement) {
                 Object.keys(obj).forEach(attr => {
-                    el.setAttribute(attr, `${obj[attr]}`);
+                    if (
+                        !polite
+                        || (polite && el.hasAttribute(attr))
+                    ) {
+                        el.setAttribute(attr, `${obj[attr]}`);
+                    }
                 });
             }
         });

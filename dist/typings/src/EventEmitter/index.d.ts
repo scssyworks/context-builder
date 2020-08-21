@@ -18,7 +18,7 @@ export declare type ContextMenuHandler<T extends Event, K extends keyof ContextM
     type: K;
     handler: ContextMenuEventMap<T>[K];
 };
-export declare class EventManager<U extends Event> {
+export declare class EventEmitter<U extends Event> {
     #private;
     constructor(thisRef: Select);
     on<K extends keyof ContextMenuEventMap<U>>(type: K, handler: ContextMenuEventMap<U>[K]): void;

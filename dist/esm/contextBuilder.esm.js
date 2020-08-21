@@ -1016,13 +1016,13 @@ var Select = /*#__PURE__*/function () {
     key: "getAllParents",
     value: function getAllParents() {
       var currRef = new Select(this);
-      var parentsList = [];
+      var parentsList = new Select();
 
       do {
         currRef = currRef.getParentNode();
 
         if (currRef) {
-          parentsList.push(currRef);
+          parentsList.add(currRef);
         }
       } while (currRef);
 
@@ -1182,6 +1182,36 @@ var Select = /*#__PURE__*/function () {
       return this.elements.map(evaluatorFn);
     }
     /**
+     * Filter elements based on returned condition
+     * @param {Function} evaluatorFn Evaluator function
+     */
+
+  }, {
+    key: "filter",
+    value: function filter(evaluatorFn) {
+      var matched = [];
+      this.map(function (el, i) {
+        if (evaluatorFn(el, i)) {
+          matched.push(el);
+        }
+      });
+      return new Select(matched);
+    }
+    /**
+     * Merges passed selection to current object
+     * @param {Select} selection input selection
+     */
+
+  }, {
+    key: "add",
+    value: function add(selection) {
+      var _this$elements;
+
+      (_this$elements = this.elements).push.apply(_this$elements, toConsumableArray(selection.elements));
+
+      return this;
+    }
+    /**
      * Returns current body tag as a Select instance
      */
 
@@ -1290,15 +1320,19 @@ var Select = /*#__PURE__*/function () {
     /**
      * Sets HTML element attributes
      * @param {object} obj HTML element attributes
+     * @param {boolean} polite Flag to set attributes politely
      */
 
   }, {
     key: "setAttr",
     value: function setAttr(obj) {
+      var polite = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
       this.elements.forEach(function (el) {
         if (el instanceof HTMLElement) {
           Object.keys(obj).forEach(function (attr) {
-            el.setAttribute(attr, "".concat(obj[attr]));
+            if (!polite || polite && el.hasAttribute(attr)) {
+              el.setAttribute(attr, "".concat(obj[attr]));
+            }
           });
         }
       });
@@ -1604,11 +1638,11 @@ var _handlers = new WeakMap();
 
 var _existingEvents = new WeakMap();
 
-var EventManager = /*#__PURE__*/function () {
-  function EventManager(thisRef) {
+var EventEmitter = /*#__PURE__*/function () {
+  function EventEmitter(thisRef) {
     var _this = this;
 
-    classCallCheck(this, EventManager);
+    classCallCheck(this, EventEmitter);
 
     _ref.set(this, {
       writable: true,
@@ -1632,7 +1666,7 @@ var EventManager = /*#__PURE__*/function () {
     classPrivateFieldSet(this, _ref, thisRef);
   }
 
-  createClass(EventManager, [{
+  createClass(EventEmitter, [{
     key: "on",
     value: function on(type, handler) {
       var currEvents = classPrivateFieldGet(this, _existingEvents).call(this, handler);
@@ -1724,7 +1758,7 @@ var EventManager = /*#__PURE__*/function () {
     }
   }]);
 
-  return EventManager;
+  return EventEmitter;
 }();
 
 function _createForOfIteratorHelper$2(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$3(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
@@ -1749,6 +1783,8 @@ var _exitFunction = new WeakMap();
 
 var _onClick = new WeakMap();
 
+var _getReferenceTarget = new WeakMap();
+
 var _onContextMenu = new WeakMap();
 
 var _onRootClick = new WeakMap();
@@ -1758,7 +1794,7 @@ var _onBeforeCleanup = new WeakMap();
 var _performCleanup = new WeakMap();
 
 var ContextMenu = /*#__PURE__*/function () {
-  function ContextMenu(target, config) {
+  function ContextMenu(_target, config) {
     var _this = this;
 
     classCallCheck(this, ContextMenu);
@@ -1812,6 +1848,10 @@ var ContextMenu = /*#__PURE__*/function () {
 
         classPrivateFieldSet(_this, _active, false);
 
+        _this.contextTarget.setAttr({
+          'aria-expanded': false
+        }, true);
+
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
           args[_key] = arguments[_key];
         }
@@ -1837,6 +1877,16 @@ var ContextMenu = /*#__PURE__*/function () {
       }
     });
 
+    _getReferenceTarget.set(this, {
+      writable: true,
+      value: function value(target) {
+        var currentTarget = new Select(target);
+        return currentTarget.getAllParents().add(currentTarget).filter(function (el) {
+          return el instanceof HTMLElement && el.hasAttribute('data-cm-host');
+        });
+      }
+    });
+
     _onContextMenu.set(this, {
       writable: true,
       value: function value(e) {
@@ -1849,6 +1899,10 @@ var ContextMenu = /*#__PURE__*/function () {
         classPrivateFieldSet(_this, _active, true);
 
         if (!classPrivateFieldGet(_this, _open)) {
+          classPrivateFieldGet(_this, _getReferenceTarget).call(_this, e.target).setAttr({
+            'aria-expanded': true
+          }, true);
+
           classPrivateFieldGet(_this, _body$1).append(_this.rootElement);
 
           new CursorPlacement(e, _this.rootElement);
@@ -1930,13 +1984,17 @@ var ContextMenu = /*#__PURE__*/function () {
 
     classPrivateFieldSet(this, _body$1, new Select().getBodyTag());
 
-    this.contextTarget = typeof target === 'string' ? new Select(target) : classPrivateFieldGet(this, _body$1);
+    this.contextTarget = typeof _target === 'string' ? new Select(_target) : classPrivateFieldGet(this, _body$1);
+    this.contextTarget.setAttr({
+      'aria-haspopup': true,
+      'aria-expanded': false
+    }, true);
     this.isSupported = Boolean(this.contextTarget.elements.length);
     this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<ul class=\"context-menu-list\"></ul>").setAttr({
-      'data-context-menu-root': true
+      'data-cm-root': true
     }).on('click', classPrivateFieldGet(this, _onRootClick));
     this.contextTarget.setAttr({
-      'data-context-menu-enabled': true
+      'data-cm-host': true
     }).on('contextmenu', classPrivateFieldGet(this, _onContextMenu));
 
     if (classPrivateFieldGet(this, _doc)) {
@@ -1949,7 +2007,7 @@ var ContextMenu = /*#__PURE__*/function () {
       }
     });
 
-    classPrivateFieldSet(this, _eventManager, new EventManager(this.rootElement));
+    classPrivateFieldSet(this, _eventManager, new EventEmitter(this.rootElement));
   } // Private functions
 
 
@@ -2088,10 +2146,10 @@ var ContextList = /*#__PURE__*/function () {
 
     this.config = Object.freeze(_typeof_1(config) === 'object' && config || {});
     this.listElement = Select.create(this.config.listElement ? this.config.listElement : "<ul class=\"context-submenu\"></ul>").setAttr({
-      'data-context-submenu-root': true
+      'data-cm-submenu-root': true
     });
     this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
-      'data-has-sub-elements': true
+      'data-sub-elements': true
     }).append(title).append(this.listElement);
   }
 
@@ -2148,7 +2206,7 @@ var ContextItem = /*#__PURE__*/function () {
 
     this.config = Object.freeze(_typeof_1(config) === 'object' && config || {});
     this.rootElement = Select.create(this.config.rootElement ? this.config.rootElement : "<li class=\"menu-item\"></li>").setAttr({
-      'data-is-context-menu-leaf': true
+      'data-cm-leaf': true
     }).append(title);
   }
 
