@@ -1,6 +1,6 @@
 {
   "name": "@scssyworks/context-builder",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Create context menus with ease",
   "main": "dist/umd/contextBuilder.js",
   "module": "dist/esm/contextBuilder.esm.js",
