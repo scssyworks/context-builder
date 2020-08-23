@@ -2,7 +2,7 @@ import { Select } from "../Select";
 
 type ContextMenuCallback<U extends Event> = (event: U, ...args: any[]) => void;
 
-type ContextMenuClickCallback<U extends Event> = (event: U, target: Select, ...args: any[]) => boolean | void;
+type ContextMenuClickCallback<U extends Event> = (event: U, target: Select, ...args: any[]) => boolean | Promise<boolean> | void;
 
 type ContextMenuActivateCallback = (rootEl: Select, ...args: any[]) => void;
 

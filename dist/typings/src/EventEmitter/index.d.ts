@@ -1,6 +1,6 @@
 import { Select } from "../Select";
 declare type ContextMenuCallback<U extends Event> = (event: U, ...args: any[]) => void;
-declare type ContextMenuClickCallback<U extends Event> = (event: U, target: Select, ...args: any[]) => boolean | void;
+declare type ContextMenuClickCallback<U extends Event> = (event: U, target: Select, ...args: any[]) => boolean | Promise<boolean> | void;
 declare type ContextMenuActivateCallback = (rootEl: Select, ...args: any[]) => void;
 declare type ContextMenuDeactivateCallback = (rootEl: Select, cb: (...args: any[]) => void, ...args: any[]) => void;
 declare type ContextMenuClosedCallback = (...args: any) => void;
