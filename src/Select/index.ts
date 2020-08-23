@@ -1,15 +1,35 @@
 import { Selector, TypeNodes } from "../types";
+import { isEnvBrowser } from "../helpers";
 
 export type HTMLSelector = Select | Selector;
 export type HTMLTypeNodes = Select | TypeNodes;
 
+if (typeof document !== 'undefined') {
+    const win = document.defaultView as any;
+    // Polyfill custom event
+    if (typeof win.CustomEvent === 'undefined') {
+        class CustomEvent<T> {
+            constructor(event: string, params?: CustomEventInit<T>) {
+                params = params || { bubbles: false, cancelable: false, detail: undefined };
+                const evt = document.createEvent('CustomEvent');
+                evt.initCustomEvent(event, params.bubbles as boolean, params.cancelable as boolean, params.detail);
+                return evt;
+            }
+        }
+        CustomEvent.prototype = win.Event.prototype;
+        win.CustomEvent = CustomEvent as any;
+    }
+}
+
 export class Select {
-    #body: boolean | HTMLBodyElement;
+    #body?: HTMLBodyElement;
     elements: Node[];
     parent: Select | null;
     constructor(selector?: HTMLSelector) {
         // Check if document and document.body exist
-        this.#body = typeof document !== 'undefined' && !!document && (document.body as HTMLBodyElement);
+        if (isEnvBrowser()) {
+            this.#body = document.body as HTMLBodyElement;
+        }
         // Resolve references
         this.elements = [];
         if (this.#body && selector) {
@@ -45,7 +65,7 @@ export class Select {
         return null;
     }
     /**
-     * Returns list of all parents
+     * Returns a Select object for all parents
      */
     getAllParents(): Select {
         let currRef: (Select | null) = new Select(this);
@@ -133,41 +153,6 @@ export class Select {
         return this;
     }
     /**
-     * Clears current elements inner HTML
-     */
-    empty(): Select {
-        if (this.#body) {
-            this.elements.forEach(el => {
-                if (el instanceof HTMLElement) {
-                    el.innerHTML = '';
-                }
-            });
-        }
-        return this;
-    }
-    /**
-     * Returns current map of HTML strings
-     */
-    htmlMap(): string[] {
-        return this.map((el: any) => {
-            if (el instanceof HTMLElement) {
-                return el.innerHTML;
-            }
-            return '';
-        });
-    }
-    /**
-     * Returns current map of text strings
-     */
-    textMap(): string[] {
-        return this.map(el => {
-            if (el instanceof HTMLElement) {
-                return el.textContent || el.innerText;
-            }
-            return '';
-        });
-    }
-    /**
      * Returns current list of element as array
      * @param {Function} evaluatorFn Evaluator function
      */
@@ -221,18 +206,18 @@ export class Select {
     /**
      * Binds a regular event listener
      */
-    on<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select {
+    on(eventType: string, cb: (e: any) => any, useCapture?: boolean): Select {
         this.elements.forEach(el => {
-            el.addEventListener(eventType, cb as EventListener, useCapture);
+            el.addEventListener(`${eventType}`, cb, useCapture);
         });
         return this;
     }
     /**
      * Removes a regular event listener
      */
-    off<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select {
+    off(eventType: string, cb: (e: any) => any, useCapture?: boolean): Select {
         this.elements.forEach(el => {
-            el.removeEventListener(eventType, cb as EventListener, useCapture);
+            el.removeEventListener(eventType, cb, useCapture);
         });
         return this;
     }
@@ -242,17 +227,13 @@ export class Select {
      * @param {Function} cb Callback function
      * @param {boolean} useCapture Use capture mode
      */
-    once<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select {
+    once(eventType: string, cb: (e: any) => any, useCapture?: boolean): Select {
         const ref = this;
-        const onceCb = function (e: WindowEventMap[K]) {
+        const onceCb = function (e: any) {
             cb.apply(this, [e]);
-            ref.elements.forEach(el => {
-                el.removeEventListener(eventType, onceCb, useCapture);
-            });
-        } as EventListener;
-        this.elements.forEach(el => {
-            el.addEventListener(eventType, onceCb, useCapture);
-        });
+            ref.off(eventType, onceCb, useCapture);
+        };
+        this.on(eventType, onceCb, useCapture);
         return this;
     }
     /**
@@ -285,7 +266,12 @@ export class Select {
      * @param {object} obj HTML element attributes
      * @param {boolean} polite Flag to set attributes politely
      */
-    setAttr(obj: { [prop: string]: string | number | boolean | null | undefined }, polite = false): Select {
+    setAttr(
+        obj: {
+            [prop: string]: string | number | boolean | null | undefined
+        },
+        polite = false
+    ): Select {
         this.elements.forEach(el => {
             if (el instanceof HTMLElement) {
                 Object.keys(obj).forEach(attr => {
@@ -299,18 +285,6 @@ export class Select {
             }
         });
         return this;
-    }
-    /**
-     * Returns a map of attribute values for selected elements
-     * @param {string} attr Attribute
-     */
-    getAttrMap(attr: string): string[] {
-        return this.map(el => {
-            if (el instanceof HTMLElement) {
-                return el.getAttribute(attr);
-            }
-            return undefined;
-        });
     }
     /**
      * Enforce a repaint of targeted elements
@@ -343,6 +317,24 @@ export class Select {
     remove(): Select {
         this.elements.forEach(el => {
             el.parentNode?.removeChild(el);
+        });
+        return this;
+    }
+    /**
+     * Emits a browser event
+     * @param {string} eventName Event name
+     * @param {any[]} args Parameters
+     */
+    emit(eventName: string, ...args: any[]): Select {
+        const customEvent = new CustomEvent(eventName, {
+            cancelable: true,
+            bubbles: true,
+            detail: {
+                args
+            }
+        });
+        this.elements.forEach(el => {
+            el.dispatchEvent(customEvent);
         });
         return this;
     }

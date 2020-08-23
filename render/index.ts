@@ -2,7 +2,6 @@ import { ContextMenu, ContextItem } from '../src';
 
 const menu = new ContextMenu()
     .on('activate', (rootEl) => {
-        console.log(rootEl.getAllParents());
         rootEl.map(el => {
             if (el instanceof HTMLElement) {
                 el.classList.add('show')
@@ -33,7 +32,8 @@ const childMenu = new ContextMenu('h2.bg-secondary')
                 el.classList.remove('show');
             }
         });
-    });
+    })
+    .on('click', () => true);
 
 menu.add(
     new ContextItem('List Item 1'),

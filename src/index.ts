@@ -1,8 +1,8 @@
 import { Select } from "./Select";
 import { CursorPlacement } from "./CursorPlacement";
 import { Beacon } from "./Beacon";
-import isPromise from 'is-promise';
 import { EventEmitter, ContextMenuEventMap } from "./EventEmitter";
+import { isEnvBrowser, asyncResolve } from "./helpers";
 
 export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     rootElement?: T;
@@ -25,15 +25,15 @@ export interface ContextItemConfig<T extends HTMLElement> {
 export class ContextMenu<T extends HTMLElement> {
     #open = false;
     #active = false;
-    #doc = typeof document !== 'undefined' && (new Select(document));
+    #doc?: Select;
     #beacon: Beacon<T>;
-    #eventManager: EventEmitter<Event>;
+    #eventEmitter: EventEmitter<Event>;
     #body: Select;
     contextTarget: Select;
     isSupported: boolean;
     rootElement: Select;
     config: ContextMenuConfig<T, Event> = {};
-    constructor(target?: string | null, config?: ContextMenuConfig<T, Event>) {
+    constructor(target?: string, config?: ContextMenuConfig<T, Event>) {
         this.#beacon = new Beacon(this);
         this.config = Object.freeze((typeof config === 'object' && config) || {});
         this.#body = new Select().getBodyTag();
@@ -55,7 +55,8 @@ export class ContextMenu<T extends HTMLElement> {
         this.contextTarget
             .setAttr({ 'data-cm-host': true })
             .on('contextmenu', this.#onContextMenu);
-        if (this.#doc) {
+        if (isEnvBrowser()) {
+            this.#doc = new Select(document);
             this.#doc.on('click', this.#onClick);
         }
         this.#beacon.listen((shouldClose) => {
@@ -63,7 +64,7 @@ export class ContextMenu<T extends HTMLElement> {
                 this.#onClick();
             }
         });
-        this.#eventManager = new EventEmitter<Event>(this.rootElement);
+        this.#eventEmitter = new EventEmitter<Event>(this.rootElement);
     }
     // Private functions
     #exitFunction = (...args: any[]): void => {
@@ -73,15 +74,15 @@ export class ContextMenu<T extends HTMLElement> {
         this.contextTarget.setAttr({
             'aria-expanded': false
         }, true);
-        this.#eventManager.emit('closed', ...args);
+        this.#eventEmitter.emit('closed', ...args);
     }
     #onClick = (): void => {
         if (this.#active) {
             if (typeof this.config.onDeactivate === 'function') {
                 this.#open = true;
                 this.config.onDeactivate(this.rootElement, this.#exitFunction);
-            } else if (this.#eventManager.hasListener('deactivate')) {
-                this.#eventManager.emit('deactivate', this.rootElement, this.#exitFunction);
+            } else if (this.#eventEmitter.hasListener('deactivate')) {
+                this.#eventEmitter.emit('deactivate', this.rootElement, this.#exitFunction);
             } else {
                 this.#exitFunction();
             }
@@ -111,24 +112,23 @@ export class ContextMenu<T extends HTMLElement> {
             if (typeof this.config.onContextMenu === 'function') {
                 this.config.onContextMenu.apply(this.rootElement, [e]);
             }
-            this.#eventManager.emit('activate', this.rootElement);
-            this.#eventManager.emit('contextmenu', e);
+            this.#eventEmitter.emit('activate', this.rootElement);
+            this.#eventEmitter.emit('contextmenu', e);
         }
     }
-    #onRootClick = (e: Event): void => {
+    #onRootClick = async (e: Event): Promise<void> => {
         e.stopPropagation();
         if (typeof this.config.onClick === 'function') {
-            const shouldExit = this.config.onClick.apply(new Select(e.target), [e]);
-            if (shouldExit) {
+            if (await asyncResolve<boolean>(this.config.onClick.apply(new Select(e.target), [e]))) {
                 this.#onClick();
             }
-        } else if (this.#eventManager.hasListener('click')) {
-            const returnedValues = this.#eventManager.emit('click', e, new Select(e.target));
-            returnedValues.forEach((shouldExit: boolean): void => {
-                if (typeof shouldExit === 'boolean' && shouldExit) {
-                    this.#onClick();
-                }
-            });
+        } else if (this.#eventEmitter.hasListener('click')) {
+            this.#eventEmitter.emit('click', e, new Select(e.target))
+                .forEach(async (shouldExit: boolean | Promise<boolean>): Promise<void> => {
+                    if (await asyncResolve<boolean>(shouldExit)) {
+                        this.#onClick();
+                    }
+                });
         }
     }
     #onBeforeCleanup = (cb: () => (boolean | Promise<boolean>)): boolean | Promise<boolean> | void => {
@@ -143,12 +143,12 @@ export class ContextMenu<T extends HTMLElement> {
             .off('contextmenu', this.#onContextMenu)
             .off('click', this.#onClick);
         this.rootElement.off('click', this.#onRootClick).remove();
-        if (this.#doc) {
-            this.#doc.off('click', this.#onClick);
+        if (isEnvBrowser()) {
+            this.#doc?.off('click', this.#onClick);
         }
         this.#beacon.off();
-        this.#eventManager.emit('cleaned');
-        this.#eventManager.off();
+        this.#eventEmitter.emit('cleaned');
+        this.#eventEmitter.off();
     }
     // Public methods
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T> {
@@ -164,32 +164,21 @@ export class ContextMenu<T extends HTMLElement> {
         return this;
     }
     async cleanup(): Promise<void> {
-        this.#eventManager.emit('beforecleanup');
+        this.#eventEmitter.emit('beforecleanup');
         if (typeof this.config.onBeforeCleanup === 'function') {
-            const shouldCleanup = this.#onBeforeCleanup(this.config.onBeforeCleanup);
-            if (typeof shouldCleanup === 'boolean' && shouldCleanup) {
+            if (await asyncResolve<boolean>(this.#onBeforeCleanup(this.config.onBeforeCleanup))) {
                 this.#performCleanup();
-            } else if (isPromise(shouldCleanup)) {
-                try {
-                    const shouldCleanupPromise = await shouldCleanup;
-                    if (shouldCleanupPromise) {
-                        this.#performCleanup();
-                    }
-                } catch (e) {
-                    // eslint-disable-next-line no-console
-                    console.error(e);
-                }
             }
         } else {
             this.#performCleanup();
         }
     }
     on<K extends keyof ContextMenuEventMap<Event>>(event: K, handler: ContextMenuEventMap<Event>[K]): ContextMenu<T> {
-        this.#eventManager.on(event, handler);
+        this.#eventEmitter.on(event, handler);
         return this;
     }
     off<K extends keyof ContextMenuEventMap<Event>>(event?: K, handler?: ContextMenuEventMap<Event>[K]): ContextMenu<T> {
-        this.#eventManager.off(event, handler);
+        this.#eventEmitter.off(event, handler);
         return this;
     }
 }

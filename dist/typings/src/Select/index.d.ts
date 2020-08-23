@@ -12,17 +12,14 @@ export declare class Select {
     append(nodes: HTMLTypeNodes): Select;
     prepend(nodes: HTMLTypeNodes): Select;
     detach(): Select;
-    empty(): Select;
-    htmlMap(): string[];
-    textMap(): string[];
     map(evaluatorFn: (n: Node, i: number) => any): any[];
     filter(evaluatorFn: (n: Node, i: number) => boolean): Select;
     add(selection: Select): Select;
     getBodyTag(): Select;
     children(): Select;
-    on<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select;
-    off<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select;
-    once<K extends keyof WindowEventMap>(eventType: K, cb: (e: WindowEventMap[K]) => any, useCapture?: boolean): Select;
+    on(eventType: string, cb: (e: any) => any, useCapture?: boolean): Select;
+    off(eventType: string, cb: (e: any) => any, useCapture?: boolean): Select;
+    once(eventType: string, cb: (e: any) => any, useCapture?: boolean): Select;
     bounds(): (DOMRect | null)[];
     setCSSProps(obj: {
         [prop: string]: any;
@@ -30,10 +27,10 @@ export declare class Select {
     setAttr(obj: {
         [prop: string]: string | number | boolean | null | undefined;
     }, polite?: boolean): Select;
-    getAttrMap(attr: string): string[];
     reflow(): Select;
     contains(nodes: HTMLSelector): boolean;
     remove(): Select;
+    emit(eventName: string, ...args: any[]): Select;
     static create(nodes: HTMLTypeNodes): Select;
 }
 //# sourceMappingURL=index.d.ts.map
