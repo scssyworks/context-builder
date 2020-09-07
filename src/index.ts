@@ -33,7 +33,7 @@ export class ContextMenu<T extends HTMLElement> {
     isSupported: boolean;
     rootElement: Select;
     config: ContextMenuConfig<T, Event> = {};
-    constructor(target?: string, config?: ContextMenuConfig<T, Event>) {
+    constructor(target?: string | null, config?: ContextMenuConfig<T, Event>) {
         this.#beacon = new Beacon(this);
         this.config = Object.freeze((typeof config === 'object' && config) || {});
         this.#body = new Select().getBodyTag();
@@ -78,10 +78,14 @@ export class ContextMenu<T extends HTMLElement> {
     }
     #onClick = (): void => {
         if (this.#active) {
-            if (typeof this.config.onDeactivate === 'function') {
+            if (
+                typeof this.config.onDeactivate === 'function'
+                || this.#eventEmitter.hasListener('deactivate')
+            ) {
                 this.#open = true;
-                this.config.onDeactivate(this.rootElement, this.#exitFunction);
-            } else if (this.#eventEmitter.hasListener('deactivate')) {
+                if (this.config.onDeactivate) {
+                    this.config.onDeactivate(this.rootElement, this.#exitFunction);
+                }
                 this.#eventEmitter.emit('deactivate', this.rootElement, this.#exitFunction);
             } else {
                 this.#exitFunction();
@@ -118,12 +122,17 @@ export class ContextMenu<T extends HTMLElement> {
     }
     #onRootClick = async (e: Event): Promise<void> => {
         e.stopPropagation();
-        if (typeof this.config.onClick === 'function') {
-            if (await asyncResolve<boolean>(this.config.onClick.apply(new Select(e.target), [e]))) {
-                this.#onClick();
+        if (
+            typeof this.config.onClick === 'function'
+            || this.#eventEmitter.hasListener('click')
+        ) {
+            if (this.config.onClick) {
+                if (await asyncResolve<boolean>(this.config.onClick.apply(new Select(e.target), [e]))) {
+                    this.#onClick();
+                }
             }
-        } else if (this.#eventEmitter.hasListener('click')) {
-            this.#eventEmitter.emit('click', e, new Select(e.target))
+            this.#eventEmitter
+                .emit('click', e, new Select(e.target))
                 .forEach(async (shouldExit: boolean | Promise<boolean>): Promise<void> => {
                     if (await asyncResolve<boolean>(shouldExit)) {
                         this.#onClick();
@@ -149,6 +158,8 @@ export class ContextMenu<T extends HTMLElement> {
         this.#beacon.off();
         this.#eventEmitter.emit('cleaned');
         this.#eventEmitter.off();
+        this.#active = false;
+        this.#open = false;
     }
     // Public methods
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T> {

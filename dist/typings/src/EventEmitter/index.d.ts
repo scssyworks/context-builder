@@ -22,7 +22,7 @@ export declare class EventEmitter<U extends Event> {
     #private;
     constructor(thisRef: Select);
     on<K extends keyof ContextMenuEventMap<U>>(type: K, handler: ContextMenuEventMap<U>[K]): void;
-    off<K extends keyof ContextMenuEventMap<U>>(type?: K, handler?: ContextMenuEventMap<U>[K]): void;
+    off<K extends keyof ContextMenuEventMap<U>>(targetType?: K, targetHandler?: ContextMenuEventMap<U>[K]): void;
     emit<K extends keyof ContextMenuEventMap<U>>(type: K, ...args: any[]): any[];
     hasListener<K extends keyof ContextMenuEventMap<U>>(type: K): boolean;
 }

@@ -1628,22 +1628,12 @@
 	  return Beacon;
 	}();
 
-	function _createForOfIteratorHelper$1(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$2(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
-
-	function _unsupportedIterableToArray$2(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$2(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$2(o, minLen); }
-
-	function _arrayLikeToArray$2(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
-
 	var _ref = new WeakMap();
 
 	var _handlers = new WeakMap();
 
-	var _existingEvents = new WeakMap();
-
 	var EventEmitter = /*#__PURE__*/function () {
 	  function EventEmitter(thisRef) {
-	    var _this = this;
-
 	    classCallCheck(this, EventEmitter);
 
 	    _ref.set(this, {
@@ -1656,86 +1646,34 @@
 	      value: []
 	    });
 
-	    _existingEvents.set(this, {
-	      writable: true,
-	      value: function value(handler) {
-	        return classPrivateFieldGet(_this, _handlers).filter(function (evtObj) {
-	          return evtObj.handler === handler;
-	        });
-	      }
-	    });
-
 	    classPrivateFieldSet(this, _ref, thisRef);
 	  }
 
 	  createClass(EventEmitter, [{
 	    key: "on",
 	    value: function on(type, handler) {
-	      var currEvents = classPrivateFieldGet(this, _existingEvents).call(this, handler);
-
-	      var pushEvent = true;
-
-	      var _iterator = _createForOfIteratorHelper$1(currEvents),
-	          _step;
-
-	      try {
-	        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-	          var currEvent = _step.value;
-
-	          if (currEvent.type === type) {
-	            pushEvent = false;
-	            break;
-	          }
-	        }
-	      } catch (err) {
-	        _iterator.e(err);
-	      } finally {
-	        _iterator.f();
-	      }
-
-	      if (pushEvent) {
-	        classPrivateFieldGet(this, _handlers).push({
-	          type: type,
-	          handler: handler
-	        });
-	      }
+	      classPrivateFieldGet(this, _handlers).push({
+	        type: type,
+	        handler: handler
+	      });
 	    }
 	  }, {
 	    key: "off",
-	    value: function off(type, handler) {
-	      if (typeof type !== 'string') {
+	    value: function off(targetType, targetHandler) {
+	      if (typeof targetType !== 'string') {
 	        classPrivateFieldGet(this, _handlers).length = 0;
 	      } else {
-	        var offHandlers = [];
-
-	        var _iterator2 = _createForOfIteratorHelper$1(classPrivateFieldGet(this, _handlers)),
-	            _step2;
-
-	        try {
-	          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-	            var currEvent = _step2.value;
-
-	            if (currEvent.type === type && (typeof handler === 'undefined' || currEvent.handler === handler)) {
-	              offHandlers.push(currEvent);
-	            }
-	          }
-	        } catch (err) {
-	          _iterator2.e(err);
-	        } finally {
-	          _iterator2.f();
-	        }
-
-	        for (var _i = 0, _offHandlers = offHandlers; _i < _offHandlers.length; _i++) {
-	          var _handler = _offHandlers[_i];
-
-	          classPrivateFieldGet(this, _handlers).splice(classPrivateFieldGet(this, _handlers).indexOf(_handler), 1);
-	        }
+	        classPrivateFieldSet(this, _handlers, classPrivateFieldGet(this, _handlers).filter(function (_ref2) {
+	          var type = _ref2.type,
+	              handler = _ref2.handler;
+	          return !(type === targetType && (typeof targetHandler === 'undefined' || handler === targetHandler));
+	        }));
 	      }
 	    }
 	  }, {
 	    key: "emit",
 	    value: function emit(type) {
-	      var _this2 = this;
+	      var _this = this;
 
 	      for (var _len = arguments.length, args = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
 	        args[_key - 1] = arguments[_key];
@@ -1745,7 +1683,7 @@
 
 	      classPrivateFieldGet(this, _handlers).forEach(function (currEvent) {
 	        if (currEvent.type === type) {
-	          returnedValues.push(currEvent.handler.apply(classPrivateFieldGet(_this2, _ref), args));
+	          returnedValues.push(currEvent.handler.apply(classPrivateFieldGet(_this, _ref), args));
 	        }
 	      });
 
@@ -1763,11 +1701,11 @@
 	  return EventEmitter;
 	}();
 
-	function _createForOfIteratorHelper$2(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$3(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+	function _createForOfIteratorHelper$1(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$2(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
-	function _unsupportedIterableToArray$3(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$3(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$3(o, minLen); }
+	function _unsupportedIterableToArray$2(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$2(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$2(o, minLen); }
 
-	function _arrayLikeToArray$3(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+	function _arrayLikeToArray$2(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 
 	var _open = new WeakMap();
 
@@ -1866,11 +1804,13 @@
 	      writable: true,
 	      value: function value() {
 	        if (classPrivateFieldGet(_this, _active)) {
-	          if (typeof _this.config.onDeactivate === 'function') {
+	          if (typeof _this.config.onDeactivate === 'function' || classPrivateFieldGet(_this, _eventEmitter).hasListener('deactivate')) {
 	            classPrivateFieldSet(_this, _open, true);
 
-	            _this.config.onDeactivate(_this.rootElement, classPrivateFieldGet(_this, _exitFunction));
-	          } else if (classPrivateFieldGet(_this, _eventEmitter).hasListener('deactivate')) {
+	            if (_this.config.onDeactivate) {
+	              _this.config.onDeactivate(_this.rootElement, classPrivateFieldGet(_this, _exitFunction));
+	            }
+
 	            classPrivateFieldGet(_this, _eventEmitter).emit('deactivate', _this.rootElement, classPrivateFieldGet(_this, _exitFunction));
 	          } else {
 	            classPrivateFieldGet(_this, _exitFunction).call(_this);
@@ -1936,60 +1876,59 @@
 	                case 0:
 	                  e.stopPropagation();
 
-	                  if (!(typeof _this.config.onClick === 'function')) {
+	                  if (!(typeof _this.config.onClick === 'function' || classPrivateFieldGet(_this, _eventEmitter).hasListener('click'))) {
 	                    _context2.next = 8;
 	                    break;
 	                  }
 
-	                  _context2.next = 4;
+	                  if (!_this.config.onClick) {
+	                    _context2.next = 7;
+	                    break;
+	                  }
+
+	                  _context2.next = 5;
 	                  return asyncResolve(_this.config.onClick.apply(new Select(e.target), [e]));
 
-	                case 4:
+	                case 5:
 	                  if (!_context2.sent) {
-	                    _context2.next = 6;
+	                    _context2.next = 7;
 	                    break;
 	                  }
 
 	                  classPrivateFieldGet(_this, _onClick).call(_this);
 
-	                case 6:
-	                  _context2.next = 9;
-	                  break;
+	                case 7:
+	                  classPrivateFieldGet(_this, _eventEmitter).emit('click', e, new Select(e.target)).forEach( /*#__PURE__*/function () {
+	                    var _ref = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee(shouldExit) {
+	                      return regenerator.wrap(function _callee$(_context) {
+	                        while (1) {
+	                          switch (_context.prev = _context.next) {
+	                            case 0:
+	                              _context.next = 2;
+	                              return asyncResolve(shouldExit);
+
+	                            case 2:
+	                              if (!_context.sent) {
+	                                _context.next = 4;
+	                                break;
+	                              }
+
+	                              classPrivateFieldGet(_this, _onClick).call(_this);
+
+	                            case 4:
+	                            case "end":
+	                              return _context.stop();
+	                          }
+	                        }
+	                      }, _callee);
+	                    }));
+
+	                    return function (_x2) {
+	                      return _ref.apply(this, arguments);
+	                    };
+	                  }());
 
 	                case 8:
-	                  if (classPrivateFieldGet(_this, _eventEmitter).hasListener('click')) {
-	                    classPrivateFieldGet(_this, _eventEmitter).emit('click', e, new Select(e.target)).forEach( /*#__PURE__*/function () {
-	                      var _ref = asyncToGenerator( /*#__PURE__*/regenerator.mark(function _callee(shouldExit) {
-	                        return regenerator.wrap(function _callee$(_context) {
-	                          while (1) {
-	                            switch (_context.prev = _context.next) {
-	                              case 0:
-	                                _context.next = 2;
-	                                return asyncResolve(shouldExit);
-
-	                              case 2:
-	                                if (!_context.sent) {
-	                                  _context.next = 4;
-	                                  break;
-	                                }
-
-	                                classPrivateFieldGet(_this, _onClick).call(_this);
-
-	                              case 4:
-	                              case "end":
-	                                return _context.stop();
-	                            }
-	                          }
-	                        }, _callee);
-	                      }));
-
-	                      return function (_x2) {
-	                        return _ref.apply(this, arguments);
-	                      };
-	                    }());
-	                  }
-
-	                case 9:
 	                case "end":
 	                  return _context2.stop();
 	              }
@@ -2035,6 +1974,10 @@
 	        classPrivateFieldGet(_this, _eventEmitter).emit('cleaned');
 
 	        classPrivateFieldGet(_this, _eventEmitter).off();
+
+	        classPrivateFieldSet(_this, _active, false);
+
+	        classPrivateFieldSet(_this, _open, false);
 	      }
 	    });
 
@@ -2083,7 +2026,7 @@
 
 	      var elements = [].concat(args);
 
-	      var _iterator = _createForOfIteratorHelper$2(elements),
+	      var _iterator = _createForOfIteratorHelper$1(elements),
 	          _step;
 
 	      try {
@@ -2196,7 +2139,7 @@
 
 	      var elements = [].concat(args);
 
-	      var _iterator2 = _createForOfIteratorHelper$2(elements),
+	      var _iterator2 = _createForOfIteratorHelper$1(elements),
 	          _step2;
 
 	      try {

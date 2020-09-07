@@ -21,7 +21,7 @@ export declare class ContextMenu<T extends HTMLElement> {
     isSupported: boolean;
     rootElement: Select;
     config: ContextMenuConfig<T, Event>;
-    constructor(target?: string, config?: ContextMenuConfig<T, Event>);
+    constructor(target?: string | null, config?: ContextMenuConfig<T, Event>);
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextMenu<T>;
     cleanup(): Promise<void>;
     on<K extends keyof ContextMenuEventMap<Event>>(event: K, handler: ContextMenuEventMap<Event>[K]): ContextMenu<T>;

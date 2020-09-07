@@ -27,48 +27,28 @@ export type ContextMenuHandler<T extends Event, K extends keyof ContextMenuEvent
     handler: ContextMenuEventMap<T>[K];
 };
 
-
 export class EventEmitter<U extends Event> {
     #ref: Select;
     #handlers = [] as ContextMenuHandler<U, keyof ContextMenuEventMap<U>>[];
     constructor(thisRef: Select) {
         this.#ref = thisRef;
     }
-    #existingEvents = (handler: unknown): ContextMenuHandler<U, keyof ContextMenuEventMap<U>>[] => {
-        return this.#handlers.filter(evtObj => evtObj.handler === handler);
-    }
     on<K extends keyof ContextMenuEventMap<U>>(type: K, handler: ContextMenuEventMap<U>[K]): void {
-        const currEvents = this.#existingEvents(handler);
-        let pushEvent = true;
-        for (const currEvent of currEvents) {
-            if (currEvent.type === type) {
-                pushEvent = false;
-                break;
-            }
-        }
-        if (pushEvent) {
-            this.#handlers.push({
-                type,
-                handler
-            });
-        }
+        this.#handlers.push({
+            type,
+            handler
+        });
     }
-    off<K extends keyof ContextMenuEventMap<U>>(type?: K, handler?: ContextMenuEventMap<U>[K]): void {
-        if (typeof type !== 'string') {
+    off<K extends keyof ContextMenuEventMap<U>>(targetType?: K, targetHandler?: ContextMenuEventMap<U>[K]): void {
+        if (typeof targetType !== 'string') {
             this.#handlers.length = 0;
         } else {
-            const offHandlers = [];
-            for (const currEvent of this.#handlers) {
-                if ((currEvent.type === type) && (
-                    typeof handler === 'undefined'
-                    || currEvent.handler === handler
-                )) {
-                    offHandlers.push(currEvent);
-                }
-            }
-            for (const handler of offHandlers) {
-                this.#handlers.splice(this.#handlers.indexOf(handler), 1);
-            }
+            this.#handlers = this.#handlers.filter(({ type, handler }) => {
+                return !(
+                    type === targetType
+                    && (typeof targetHandler === 'undefined' || handler === targetHandler)
+                );
+            });
         }
     }
     emit<K extends keyof ContextMenuEventMap<U>>(type: K, ...args: any[]): any[] {

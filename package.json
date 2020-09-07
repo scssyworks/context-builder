@@ -8,7 +8,7 @@
   "scripts": {
     "start": "rollup -c --watch --environment SERVE:true",
     "build": "npm run typegen && rollup -c",
-    "test": "jest plugin.test.js",
+    "test": "jest plugin.test.ts --coverage",
     "typegen": "tsc --declaration --noEmit false --outDir dist/typings/ --emitDeclarationOnly --declarationMap"
   },
   "author": "scssyworks",
