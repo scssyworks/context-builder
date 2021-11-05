@@ -1,4 +1,4 @@
-import { ContextMenu } from "..";
+import { ContextMenu } from '..';
 export declare class Beacon<T extends HTMLElement> {
     #private;
     constructor(parentThis: ContextMenu<T>);

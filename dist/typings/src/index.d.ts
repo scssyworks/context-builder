@@ -1,12 +1,12 @@
-import { Select } from "./Select";
-import { ContextMenuEventMap } from "./EventEmitter";
+import { Select } from './Select';
+import { ContextMenuEventMap } from './EventEmitter';
 export interface ContextMenuConfig<T extends HTMLElement, U extends Event> {
     rootElement?: T;
     onClick?: (event: U) => boolean | void;
     onActivate?: (elements: Select) => void;
     onDeactivate?: (elements: Select, callback: () => void) => void;
     onContextMenu?: (event: U) => void;
-    onBeforeCleanup?: () => (boolean | Promise<boolean>);
+    onBeforeCleanup?: () => boolean | Promise<boolean>;
 }
 export interface ContextListConfig<T extends HTMLElement, U extends HTMLElement> {
     rootElement?: T;
@@ -32,7 +32,7 @@ export declare class ContextList<T extends HTMLElement, U extends HTMLElement> {
     rootElement: Select;
     listElement: Select;
     constructor(title: string, config?: ContextListConfig<T, U>);
-    get parent(): (Select | null);
+    get parent(): Select | null;
     add(...args: (ContextList<HTMLElement, HTMLElement> | ContextItem<HTMLElement>)[]): ContextList<T, U>;
     remove(): void;
 }

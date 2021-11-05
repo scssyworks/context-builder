@@ -1,4 +1,4 @@
-import { Selector, TypeNodes } from "../types";
+import { Selector, TypeNodes } from '../types';
 export declare type HTMLSelector = Select | Selector;
 export declare type HTMLTypeNodes = Select | TypeNodes;
 export declare class Select {
@@ -6,7 +6,7 @@ export declare class Select {
     elements: Node[];
     parent: Select | null;
     constructor(selector?: HTMLSelector);
-    getParentNode(): (Select | null);
+    getParentNode(): Select | null;
     getAllParents(): Select;
     query(selector: string): Select;
     append(nodes: HTMLTypeNodes): Select;
